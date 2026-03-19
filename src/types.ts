@@ -1,5 +1,7 @@
 export type Screen = 'dashboard' | 'activity' | 'generator' | 'match' | 'settings';
 
+export type UserRole = 'hr' | 'hiring_manager';
+
 export interface ActivityItem {
   id: string;
   type: 'commit' | 'ticket';
@@ -28,4 +30,18 @@ export interface Metric {
   value: string;
   trend?: string;
   subtext?: string;
+}
+
+export interface InterviewQuestion {
+  id: string;
+  category: string;
+  question: string;
+  expectedAnswer: string;
+  candidateAnswer: string;
+}
+
+export interface UploadedFile {
+  name: string;
+  size: string;
+  type: 'pdf' | 'doc' | 'other';
 }

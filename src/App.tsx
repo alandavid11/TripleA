@@ -5,10 +5,11 @@ import { Dashboard } from './screens/Dashboard';
 import { Activity } from './screens/Activity';
 import { Generator } from './screens/Generator';
 import { Match } from './screens/Match';
-import { Screen } from './types';
+import { Screen, UserRole } from './types';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<Screen>('dashboard');
+  const [activeRole, setActiveRole] = useState<UserRole>('hr');
 
   const renderScreen = () => {
     switch (activeScreen) {
@@ -17,7 +18,7 @@ export default function App() {
       case 'activity':
         return <Activity />;
       case 'generator':
-        return <Generator />;
+        return <Generator activeRole={activeRole} />;
       case 'match':
         return <Match />;
       case 'settings':
@@ -39,7 +40,7 @@ export default function App() {
     <div className="min-h-screen bg-surface">
       <Sidebar activeScreen={activeScreen} onScreenChange={setActiveScreen} />
       <main className="ml-64 min-h-screen">
-        <TopBar />
+        <TopBar activeRole={activeRole} onRoleChange={setActiveRole} />
         <div className="pb-24">
           {renderScreen()}
         </div>

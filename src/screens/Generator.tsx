@@ -1,203 +1,495 @@
-import React from 'react';
-import { 
-  Save, 
-  Share2, 
-  Sparkles, 
-  CheckCircle2, 
-  PlusCircle, 
+import React, { useState } from 'react';
+import {
+  Upload,
+  FileText,
+  X,
+  Users,
+  Sparkles,
   BrainCircuit,
-  Rocket,
-  ShieldCheck,
-  ChevronDown
+  CheckCircle2,
+  ChevronDown,
+  ClipboardList,
+  MessageSquare,
+  BarChart3,
+  Loader2,
+  PlusCircle,
 } from 'lucide-react';
+import { UserRole, InterviewQuestion, UploadedFile } from '../types';
 
-export const Generator: React.FC = () => {
+interface GeneratorProps {
+  activeRole: UserRole;
+}
+
+const MOCK_QUESTIONS: InterviewQuestion[] = [
+  {
+    id: '1',
+    category: 'Technical Architecture',
+    question: '¿Cómo diseñarías un sistema de colas para procesar 10M de eventos por segundo?',
+    expectedAnswer: 'Debería mencionar message brokers (Kafka/RabbitMQ), particionamiento, backpressure, idempotencia y estrategias de retry con dead-letter queues.',
+    candidateAnswer: '',
+  },
+  {
+    id: '2',
+    category: 'Problem Solving',
+    question: '¿Describe una situación donde tuviste que refactorizar un sistema legacy crítico. ¿Qué estrategia usaste?',
+    expectedAnswer: 'Buscar mención de strangler fig pattern, feature flags, pruebas de regresión exhaustivas, migración gradual y comunicación con stakeholders.',
+    candidateAnswer: '',
+  },
+  {
+    id: '3',
+    category: 'Team Collaboration',
+    question: '¿Cómo manejas desacuerdos técnicos con otros seniors del equipo?',
+    expectedAnswer: 'Evidencia de debate basado en datos, prototipos/POCs para validar ideas, capacidad de ceder cuando hay mejor evidencia, y documentación de decisiones (ADRs).',
+    candidateAnswer: '',
+  },
+  {
+    id: '4',
+    category: 'DevOps & Infrastructure',
+    question: '¿Qué estrategia de CI/CD implementarías para un equipo de 15 desarrolladores?',
+    expectedAnswer: 'Trunk-based development o GitFlow según contexto, pipelines con stages (lint, test, build, deploy), ambientes de staging, canary/blue-green deployments.',
+    candidateAnswer: '',
+  },
+];
+
+const MOCK_GENERATED_JD = {
+  title: 'Senior Backend Engineer',
+  summary: 'Buscamos un Senior Backend Engineer para liderar la evolución de nuestros sistemas distribuidos de alta escala. El candidato ideal arquitectará microservicios robustos, mentorizará al equipo junior y definirá el roadmap técnico del motor de procesamiento core.',
+  skills: ['Go / Rust', 'Kubernetes', 'PostgreSQL', 'gRPC', 'CI/CD', 'System Design'],
+  responsibilities: [
+    'Diseñar y mantener microservicios de alta concurrencia.',
+    'Liderar code reviews y establecer estándares arquitectónicos.',
+    'Colaborar con SRE para optimizar costos de infraestructura.',
+    'Definir y monitorear SLOs para servicios críticos.',
+  ],
+};
+
+export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
+  const [jdFiles, setJdFiles] = useState<UploadedFile[]>([]);
+  const [teamActivities, setTeamActivities] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generated, setGenerated] = useState(false);
+  const [questions, setQuestions] = useState<InterviewQuestion[]>(MOCK_QUESTIONS);
+  const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [teamContext, setTeamContext] = useState('Platform Engineering');
+  const [roleType, setRoleType] = useState('Senior Backend Engineer');
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newFiles: UploadedFile[] = Array.from(files).map((f) => ({
+      name: f.name,
+      size: `${(f.size / 1024).toFixed(1)} KB`,
+      type: f.name.endsWith('.pdf') ? 'pdf' : f.name.endsWith('.doc') || f.name.endsWith('.docx') ? 'doc' : 'other',
+    }));
+    setJdFiles((prev) => [...prev, ...newFiles]);
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setJdFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      setGenerated(true);
+    }, 2000);
+  };
+
+  const handleCandidateAnswer = (id: string, answer: string) => {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, candidateAnswer: answer } : q))
+    );
+  };
+
+  const handleEvaluate = () => {
+    setIsEvaluating(true);
+    setTimeout(() => {
+      setIsEvaluating(false);
+      const answeredCount = questions.filter((q) => q.candidateAnswer.trim().length > 0).length;
+      const base = answeredCount / questions.length;
+      setMatchScore(Math.round(base * 85 + Math.random() * 15));
+    }, 1800);
+  };
+
+  const answeredAll = questions.every((q) => q.candidateAnswer.trim().length > 0);
+  const hasInputs = jdFiles.length > 0 || teamActivities.trim().length > 0;
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <header className="flex justify-between items-end mb-12">
-        <div>
-          <nav className="flex text-[11px] font-bold uppercase tracking-widest text-on-primary-container mb-2">
-            <span className="opacity-50">Engineering Intelligence</span>
-            <span className="mx-2 opacity-50">/</span>
-            <span>Profile Generator</span>
-          </nav>
-          <h2 className="font-headline text-4xl font-extrabold text-primary-container tracking-tight">Job Profile Architect</h2>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-lowest text-primary-container font-bold rounded-lg hover:bg-surface-container-high transition-colors text-sm shadow-sm">
-            <Save size={18} />
-            Save Draft
-          </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-container text-white font-bold rounded-lg hover:opacity-90 transition-opacity text-sm shadow-md">
-            <Share2 size={18} />
-            Export to PDF/ATS
-          </button>
+      <header className="mb-10">
+        <nav className="flex text-[11px] font-bold uppercase tracking-widest text-on-primary-container mb-2">
+          <span className="opacity-50">TripleA</span>
+          <span className="mx-2 opacity-50">/</span>
+          <span>Profile Generator</span>
+        </nav>
+        <div className="flex justify-between items-end">
+          <div>
+            <h2 className="font-headline text-4xl font-extrabold text-primary-container tracking-tight">
+              Job Profile Architect
+            </h2>
+            <p className="text-on-surface-variant mt-1">
+              {activeRole === 'hr'
+                ? 'Genera perfiles de puesto optimizados y evalúa candidatos con IA.'
+                : 'Define requisitos técnicos y actividades del equipo para generar perfiles precisos.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
+            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+              Vista: {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
+            </span>
+          </div>
         </div>
       </header>
 
-      <section className="bg-surface-container-low p-8 rounded-2xl mb-12 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-outline ml-1">Team Context</label>
-            <div className="relative">
-              <select className="w-full bg-surface-container-lowest border-none rounded-lg p-4 text-sm font-semibold focus:ring-2 focus:ring-secondary transition-all appearance-none">
-                <option>Platform Engineering</option>
-                <option>Infrastructure & SRE</option>
-                <option>Product & Growth</option>
-                <option>Data & AI Systems</option>
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none" size={16} />
+      {/* ── STEP 1: INPUTS ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Job Description & Skills Upload */}
+        <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
+              <FileText className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className="font-headline text-lg font-bold text-on-surface">Job Description & Skills</h3>
+              <p className="text-xs text-on-surface-variant">Sube la JD original y documentos de habilidades requeridas</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-outline ml-1">Role Type</label>
-            <input 
-              className="w-full bg-surface-container-lowest border-none rounded-lg p-4 text-sm font-semibold focus:ring-2 focus:ring-secondary transition-all" 
-              placeholder="e.g., Senior Backend Engineer" 
-              type="text" 
-              defaultValue="Senior Backend Engineer"
-            />
-          </div>
-          <div className="flex items-end">
-            <button className="w-full h-14 bg-secondary text-white font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-lg">
-              <Sparkles size={20} />
-              Regenerate Profile
-            </button>
-          </div>
-        </div>
-      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-7 space-y-8">
-          <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="font-headline text-xl font-bold text-primary-container">Role Definition</h3>
-              <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-widest rounded-full">AI Generated</span>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-[11px] font-black uppercase tracking-tighter text-outline mb-2">Summary</h4>
-                <p className="text-on-surface leading-relaxed text-sm">
-                  We are seeking a Senior Backend Engineer to lead the evolution of our high-scale distributed systems. You will architect robust microservices, mentor junior staff, and drive the technical roadmap for our core processing engine that handles over 10M events per second.
-                </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-outline ml-1">Equipo</label>
+                <div className="relative">
+                  <select
+                    value={teamContext}
+                    onChange={(e) => setTeamContext(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded-lg p-3 text-sm font-semibold focus:ring-2 focus:ring-secondary transition-all appearance-none"
+                  >
+                    <option>Platform Engineering</option>
+                    <option>Infrastructure & SRE</option>
+                    <option>Product & Growth</option>
+                    <option>Data & AI Systems</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" size={14} />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-surface-container-low rounded-xl">
-                  <h4 className="text-[11px] font-black uppercase tracking-tighter text-outline mb-2">Core Tech Stack</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['Go / Rust', 'Kubernetes', 'PostgreSQL', 'gRPC'].map(tech => (
-                      <span key={tech} className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-bold">{tech}</span>
-                    ))}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-outline ml-1">Rol</label>
+                <input
+                  value={roleType}
+                  onChange={(e) => setRoleType(e.target.value)}
+                  className="w-full bg-surface-container-low border-none rounded-lg p-3 text-sm font-semibold focus:ring-2 focus:ring-secondary transition-all"
+                  placeholder="e.g., Senior Backend Engineer"
+                  type="text"
+                />
+              </div>
+            </div>
+
+            <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant/40 rounded-xl cursor-pointer hover:border-secondary hover:bg-secondary/5 transition-all group">
+              <Upload className="text-outline-variant group-hover:text-secondary mb-3 transition-colors" size={32} />
+              <span className="text-sm font-bold text-on-surface-variant group-hover:text-secondary transition-colors">
+                Arrastra archivos PDF o haz clic para subir
+              </span>
+              <span className="text-[10px] text-outline mt-1">Job Description, Skills Matrix, Role Requirements</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                multiple
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+
+            {jdFiles.length > 0 && (
+              <div className="space-y-2">
+                {jdFiles.map((file, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-error-container rounded-lg flex items-center justify-center">
+                        <FileText className="text-on-error-container" size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-on-surface">{file.name}</p>
+                        <p className="text-[10px] text-outline">{file.size}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => removeFile(i)} className="p-1 hover:bg-surface-container-high rounded transition-colors">
+                      <X className="text-outline" size={16} />
+                    </button>
                   </div>
-                </div>
-                <div className="p-4 bg-surface-container-low rounded-xl">
-                  <h4 className="text-[11px] font-black uppercase tracking-tighter text-outline mb-2">Primary Goal</h4>
-                  <p className="text-[12px] font-semibold text-primary-container">System Scalability & Resilience</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border-l-4 border-secondary">
-              <h3 className="font-headline text-lg font-bold text-primary-container mb-4">Requirements</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-[10px] font-black uppercase text-secondary mb-2">Must Have</h4>
-                  <ul className="space-y-2 text-sm text-on-surface">
-                    <li className="flex items-start gap-2"><CheckCircle2 className="text-secondary mt-0.5" size={16} /> 6+ years in high-traffic backend development.</li>
-                    <li className="flex items-start gap-2"><CheckCircle2 className="text-secondary mt-0.5" size={16} /> Deep expertise in distributed databases.</li>
-                    <li className="flex items-start gap-2"><CheckCircle2 className="text-secondary mt-0.5" size={16} /> Proven experience with CI/CD automation.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black uppercase text-outline mb-2">Nice to Have</h4>
-                  <ul className="space-y-2 text-sm text-on-surface opacity-75">
-                    <li className="flex items-start gap-2"><PlusCircle className="text-outline mt-0.5" size={16} /> Contributions to OSS projects.</li>
-                    <li className="flex items-start gap-2"><PlusCircle className="text-outline mt-0.5" size={16} /> Experience with eBPF or low-level profiling.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
-              <h3 className="font-headline text-lg font-bold text-primary-container mb-4">Key Responsibilities</h3>
-              <ul className="space-y-3">
-                {[
-                  'Design and maintain high-concurrency microservices.',
-                  'Lead code reviews and drive architectural standards.',
-                  'Collaborate with SRE to optimize infrastructure spend.',
-                  'Define and monitor SLOs for critical path services.'
-                ].map((resp, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="w-6 h-6 flex items-center justify-center bg-primary-container text-white text-[10px] font-bold rounded-full flex-shrink-0">0{i+1}</span>
-                    <p className="text-sm leading-snug">{resp}</p>
-                  </li>
                 ))}
-              </ul>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Team Activities Input */}
+        <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+              <Users className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className="font-headline text-lg font-bold text-on-surface">Actividades del Equipo</h3>
+              <p className="text-xs text-on-surface-variant">Describe las actividades actuales del equipo receptor</p>
             </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-5 space-y-8">
-          <div className="bg-primary-container text-white p-8 rounded-2xl shadow-xl overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 blur-3xl -mr-10 -mt-10 rounded-full"></div>
-            <h3 className="font-headline text-xl font-bold mb-6 flex items-center gap-2">
-              <BrainCircuit className="text-secondary" size={24} />
-              Interview Intel
-            </h3>
-            <div className="space-y-6">
-              <div className="group border-b border-white/10 pb-4 last:border-0">
-                <p className="text-xs font-black uppercase text-on-primary-container tracking-widest mb-1">Architecture Q1</p>
-                <p className="text-sm font-semibold mb-2 text-white">"How would you handle a sudden 10x spike in write-heavy traffic?"</p>
-                <div className="p-3 bg-white/5 rounded-lg border-l-2 border-secondary">
-                  <p className="text-[11px] text-on-primary-container uppercase font-bold mb-1">Look For:</p>
-                  <p className="text-xs italic opacity-80">Knowledge of backpressure, message queues (Kafka), and database sharding vs scaling.</p>
-                </div>
-              </div>
-              <div className="group border-b border-white/10 pb-4 last:border-0">
-                <p className="text-xs font-black uppercase text-on-primary-container tracking-widest mb-1">Conflict Q2</p>
-                <p className="text-sm font-semibold mb-2 text-white">"Describe a time you disagreed with a technical decision by a lead."</p>
-                <div className="p-3 bg-white/5 rounded-lg border-l-2 border-secondary">
-                  <p className="text-[11px] text-on-primary-container uppercase font-bold mb-1">Look For:</p>
-                  <p className="text-xs italic opacity-80">Evidence of healthy technical debate, data-driven reasoning, and eventual alignment.</p>
-                </div>
-              </div>
-            </div>
-            <button className="w-full mt-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary-container hover:text-white transition-colors">
-              View 3 Additional Questions
-            </button>
-          </div>
+          <textarea
+            value={teamActivities}
+            onChange={(e) => setTeamActivities(e.target.value)}
+            className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none"
+            placeholder={"Ejemplo:\n- El equipo trabaja con microservicios en Go y gRPC\n- Usan Kubernetes para orquestación\n- Practican trunk-based development\n- Sprint reviews cada 2 semanas\n- Necesitan alguien que lidere la migración a event-driven architecture"}
+            rows={8}
+          />
 
-          <div className="bg-surface-container-low p-8 rounded-2xl shadow-sm">
-            <h3 className="font-headline text-lg font-bold text-primary-container mb-6">Evaluation Rubric</h3>
-            <div className="space-y-3">
-              {[
-                { level: 'Junior', text: 'Writes clean code but requires significant oversight for architecture. Focuses on ticket completion.' },
-                { level: 'Mid', text: 'Independent worker. Understands common design patterns and can own a complete feature lifecycle.' },
-                { level: 'Senior', text: 'System-wide thinking. Influences architecture, mentors others, and considers long-term maintenance costs.', active: true }
-              ].map((item, i) => (
-                <div key={i} className={`flex items-center gap-4 bg-surface-container-lowest p-4 rounded-xl shadow-sm ${item.active ? 'ring-2 ring-secondary/50' : ''}`}>
-                  <div className="w-16 text-center">
-                    <p className={`text-[10px] font-black uppercase ${item.active ? 'text-secondary' : 'text-outline'}`}>Level</p>
-                    <p className={`text-xs font-bold ${item.active ? 'text-secondary' : ''}`}>{item.level}</p>
-                  </div>
-                  <div className="h-8 w-px bg-outline-variant"></div>
-                  <p className={`text-[11px] leading-snug ${item.active ? 'font-medium' : ''}`}>{item.text}</p>
-                </div>
+          <div className="mt-4 p-4 bg-surface-container-low rounded-xl">
+            <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Contexto rápido</p>
+            <div className="flex flex-wrap gap-2">
+              {['Microservicios', 'Monolito', 'Event-Driven', 'REST APIs', 'GraphQL', 'Data Pipeline'].map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setTeamActivities((prev) => prev + (prev ? '\n- ' : '- ') + tag)}
+                  className="px-3 py-1.5 bg-surface-container-lowest text-on-surface-variant text-[11px] font-bold rounded-lg border border-outline-variant/20 hover:border-secondary hover:text-secondary transition-all"
+                >
+                  <PlusCircle className="inline mr-1" size={12} />
+                  {tag}
+                </button>
               ))}
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      <div className="fixed bottom-8 right-8 flex items-center gap-4 px-6 py-4 glass-effect border border-white/40 shadow-2xl rounded-2xl z-40">
-        <div className="w-4 h-4 bg-secondary rounded-full animate-pulse"></div>
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-primary-container">Mirror Engine Active</p>
-          <p className="text-[10px] text-outline">Optimizing JD for engineering cultural fit...</p>
-        </div>
-        <button className="ml-4 text-xs font-bold text-error uppercase">Cancel</button>
+      {/* Generate Button */}
+      <div className="flex justify-center mb-12">
+        <button
+          onClick={handleGenerate}
+          disabled={!hasInputs || isGenerating}
+          className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${
+            hasInputs && !isGenerating
+              ? 'bg-primary-container text-white hover:opacity-90 cursor-pointer'
+              : 'bg-surface-container-high text-outline cursor-not-allowed'
+          }`}
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              Procesando con IA...
+            </>
+          ) : (
+            <>
+              <Sparkles size={20} />
+              Generar con IA
+            </>
+          )}
+        </button>
       </div>
+
+      {/* ── STEP 2: GENERATED OUTPUT ── */}
+      {generated && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            {/* Polished JD */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-secondary-container rounded-xl flex items-center justify-center">
+                      <BrainCircuit className="text-on-secondary-container" size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-headline text-xl font-bold text-on-surface">
+                        {MOCK_GENERATED_JD.title}
+                      </h3>
+                      <p className="text-xs text-on-surface-variant">Job Description optimizada por IA</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-widest rounded-full">
+                    AI Generated
+                  </span>
+                </div>
+
+                <p className="text-sm text-on-surface leading-relaxed mb-6">{MOCK_GENERATED_JD.summary}</p>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-4 bg-surface-container-low rounded-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Skills Requeridas</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {MOCK_GENERATED_JD.skills.map((skill) => (
+                        <span key={skill} className="px-3 py-1.5 bg-secondary-container text-on-secondary-container rounded-lg text-[11px] font-bold">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-surface-container-low rounded-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Equipo Destino</h4>
+                    <p className="text-sm font-semibold text-primary-container">{teamContext}</p>
+                    <p className="text-xs text-on-surface-variant mt-1">{roleType}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Responsabilidades Clave</h4>
+                  <ul className="space-y-3">
+                    {MOCK_GENERATED_JD.responsibilities.map((resp, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="w-6 h-6 flex items-center justify-center bg-primary-container text-white text-[10px] font-bold rounded-full flex-shrink-0">
+                          0{i + 1}
+                        </span>
+                        <p className="text-sm leading-snug">{resp}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Interview Questions Panel */}
+            <div className="lg:col-span-5">
+              <div className="bg-primary-container text-white p-8 rounded-2xl shadow-xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 blur-3xl -mr-10 -mt-10 rounded-full" />
+                <div className="flex items-center gap-3 mb-6">
+                  <ClipboardList className="text-secondary" size={24} />
+                  <div>
+                    <h3 className="font-headline text-xl font-bold">Preguntas de Entrevista</h3>
+                    <p className="text-xs text-on-primary-container">Generadas por IA con respuestas esperadas</p>
+                  </div>
+                </div>
+                <div className="space-y-5">
+                  {questions.map((q, i) => (
+                    <div key={q.id} className="border-b border-white/10 pb-4 last:border-0">
+                      <p className="text-[10px] font-black uppercase text-on-primary-container tracking-widest mb-1">
+                        {q.category} — Q{i + 1}
+                      </p>
+                      <p className="text-sm font-semibold mb-2">"{q.question}"</p>
+                      <div className="p-3 bg-white/5 rounded-lg border-l-2 border-secondary">
+                        <p className="text-[10px] text-on-primary-container uppercase font-bold mb-1">Respuesta esperada:</p>
+                        <p className="text-xs italic opacity-80">{q.expectedAnswer}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── STEP 3: HR CANDIDATE EVALUATION ── */}
+          {activeRole === 'hr' && (
+            <section className="mb-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
+                  <MessageSquare className="text-white" size={20} />
+                </div>
+                <div>
+                  <h3 className="font-headline text-2xl font-bold text-on-surface">Evaluación del Candidato</h3>
+                  <p className="text-sm text-on-surface-variant">
+                    Ingresa las respuestas reales del candidato para obtener el porcentaje de match
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {questions.map((q, i) => (
+                  <div key={q.id} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+                    <div className="flex items-start gap-4">
+                      <span className="w-8 h-8 flex items-center justify-center bg-primary-container text-white text-xs font-bold rounded-lg flex-shrink-0">
+                        Q{i + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-on-surface mb-1">{q.question}</p>
+                        <p className="text-[10px] text-outline uppercase font-bold mb-3">{q.category}</p>
+                        <textarea
+                          value={q.candidateAnswer}
+                          onChange={(e) => handleCandidateAnswer(q.id, e.target.value)}
+                          className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none"
+                          placeholder="Escribe la respuesta del candidato..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={handleEvaluate}
+                  disabled={!answeredAll || isEvaluating}
+                  className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${
+                    answeredAll && !isEvaluating
+                      ? 'bg-secondary text-white hover:opacity-90 cursor-pointer'
+                      : 'bg-surface-container-high text-outline cursor-not-allowed'
+                  }`}
+                >
+                  {isEvaluating ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Evaluando con IA...
+                    </>
+                  ) : (
+                    <>
+                      <BarChart3 size={20} />
+                      Evaluar Match con IA
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* ── MATCH RESULT ── */}
+          {matchScore !== null && (
+            <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="relative w-28 h-28 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
+                      <circle
+                        className={matchScore >= 70 ? 'text-secondary' : 'text-error'}
+                        cx="56"
+                        cy="56"
+                        fill="transparent"
+                        r="48"
+                        stroke="currentColor"
+                        strokeDasharray="301"
+                        strokeDashoffset={301 - (301 * matchScore) / 100}
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className={`absolute font-headline font-black text-3xl ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
+                      {matchScore}%
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-headline text-2xl font-bold text-on-surface">Match Score</h3>
+                    <p className="text-sm text-on-surface-variant mt-1">
+                      {matchScore >= 80
+                        ? 'Excelente candidato. Altamente compatible con el perfil.'
+                        : matchScore >= 60
+                          ? 'Buen candidato con áreas de desarrollo identificadas.'
+                          : 'El candidato necesita desarrollo significativo en áreas clave.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className={matchScore >= 70 ? 'text-secondary' : 'text-error'} size={20} />
+                  <span className={`text-sm font-bold ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
+                    {matchScore >= 80 ? 'Recomendado' : matchScore >= 60 ? 'Considerar' : 'No recomendado'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
