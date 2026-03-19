@@ -34,6 +34,7 @@ export interface InterviewQuestion {
   question: string;
   expectedAnswer: string;
   candidateAnswer: string;
+  tailoredFor?: string;
 }
 
 export interface UploadedFile {
