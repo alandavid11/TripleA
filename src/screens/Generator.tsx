@@ -3,6 +3,7 @@ import {
   Upload,
   FileText,
   X,
+  Gift,
   Users,
   Sparkles,
   BrainCircuit,
@@ -14,8 +15,12 @@ import {
   Loader2,
   PlusCircle,
   FlaskConical,
+  XCircle,
+  AlertTriangle,
+  Eye,
+  Send,
 } from 'lucide-react';
-import { UserRole, InterviewQuestion, UploadedFile } from '../types';
+import { UserRole, InterviewQuestion, UploadedFile, RejectionFeedback } from '../types';
 
 interface GeneratorProps {
   activeRole: UserRole;
@@ -62,19 +67,28 @@ const MOCK_GENERATED_JD = {
     'Colaborar con SRE para optimizar costos de infraestructura.',
     'Definir y monitorear SLOs para servicios críticos.',
   ],
+  benefits: [
+    'Trabajo 100% remoto con horario flexible',
+    'Seguro de gastos médicos mayores y menores',
+    'Vales de despensa y fondo de ahorro',
+    'Presupuesto anual de capacitación ($2,000 USD)',
+    '20 días de vacaciones desde el primer año',
+  ],
 };
 
-const MOCK_TEAM_ACTIVITIES = `- El equipo trabaja con microservicios en Go y gRPC
-- Usan Kubernetes en GCP para orquestación de servicios
-- Practican trunk-based development con CI/CD en GitHub Actions
-- Sprint reviews cada 2 semanas con planning trimestral
-- Necesitan alguien que lidere la migración a event-driven architecture
-- Stack actual: Go, PostgreSQL, Redis, Kafka, Terraform`;
+const MOCK_TEAM_SUMMARY = `El equipo trabaja con microservicios en Go y gRPC, usa Kubernetes en GCP para orquestación, practica trunk-based development con CI/CD en GitHub Actions. Sprint reviews cada 2 semanas con planning trimestral. Necesitan alguien que lidere la migración a event-driven architecture. Stack: Go, PostgreSQL, Redis, Kafka, Terraform.`;
 
 const MOCK_FILES: UploadedFile[] = [
   { name: 'JD_Senior_Backend_Engineer.pdf', size: '245.3 KB', type: 'pdf' },
   { name: 'Skills_Matrix_Platform_Team.pdf', size: '128.7 KB', type: 'pdf' },
 ];
+
+const MOCK_BENEFITS = `- Trabajo 100% remoto con horario flexible
+- Seguro de gastos médicos mayores y menores
+- Vales de despensa y fondo de ahorro
+- Presupuesto anual de capacitación ($2,000 USD)
+- 20 días de vacaciones desde el primer año
+- Bonos trimestrales por desempeño`;
 
 const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
   '1': 'Implementaría Kafka como message broker con particionamiento por tenant ID, usando consumer groups para escalar horizontalmente. Aplicaría backpressure con rate limiting y tendría dead-letter queues para mensajes fallidos con retry exponencial.',
@@ -83,10 +97,25 @@ const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
   '4': 'Implementaría trunk-based development con feature flags, pipelines de CI con lint/test/build paralelos, deploy automático a staging y canary releases a producción con rollback automático si las métricas caen.',
 };
 
+const MOCK_REJECTIONS: RejectionFeedback[] = [
+  {
+    candidateName: 'Roberto Vega',
+    score: 34,
+    gaps: ['Sin experiencia en sistemas distribuidos', 'No conoce Kubernetes ni contenedores', 'Experiencia limitada a monolitos PHP'],
+    feedback: 'El candidato tiene buena actitud y capacidad de aprendizaje, pero su experiencia técnica está centrada en monolitos PHP y no cuenta con las bases necesarias en sistemas distribuidos, orquestación de contenedores ni message brokers que el puesto requiere. Recomendamos que se enfoque en cursos de arquitectura de microservicios y Kubernetes antes de aplicar a posiciones similares.',
+  },
+  {
+    candidateName: 'Laura Méndez',
+    score: 52,
+    gaps: ['CI/CD limitado a deploys manuales', 'Sin experiencia con event-driven architecture'],
+    feedback: 'La candidata demuestra conocimiento sólido en backend con Go, pero su experiencia en CI/CD se limita a scripts manuales y no ha trabajado con arquitecturas event-driven. Sugerimos profundizar en GitHub Actions, pipelines automatizados y patrones como CQRS/Event Sourcing para posiciones de este nivel.',
+  },
+];
+
 export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
   const [mockMode, setMockMode] = useState(false);
   const [jdFiles, setJdFiles] = useState<UploadedFile[]>([]);
-  const [teamActivities, setTeamActivities] = useState('');
+  const [companyBenefits, setCompanyBenefits] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [questions, setQuestions] = useState<InterviewQuestion[]>(MOCK_QUESTIONS);
@@ -94,15 +123,18 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [teamContext, setTeamContext] = useState('Platform Engineering');
   const [roleType, setRoleType] = useState('Senior Backend Engineer');
+  const [showRejections, setShowRejections] = useState(false);
+  const [hmSubmitted, setHmSubmitted] = useState(false);
 
   const toggleMockMode = () => {
     const next = !mockMode;
     setMockMode(next);
     if (next) {
       setJdFiles(MOCK_FILES);
-      setTeamActivities(MOCK_TEAM_ACTIVITIES);
+      setCompanyBenefits(MOCK_BENEFITS);
       setTeamContext('Platform Engineering');
       setRoleType('Senior Backend Engineer');
+      setHmSubmitted(true);
       setQuestions(
         MOCK_QUESTIONS.map((q) => ({
           ...q,
@@ -111,9 +143,11 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
       );
     } else {
       setJdFiles([]);
-      setTeamActivities('');
+      setCompanyBenefits('');
       setGenerated(false);
       setMatchScore(null);
+      setShowRejections(false);
+      setHmSubmitted(false);
       setQuestions(MOCK_QUESTIONS);
     }
   };
@@ -159,7 +193,7 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
   };
 
   const answeredAll = questions.every((q) => q.candidateAnswer.trim().length > 0);
-  const hasInputs = jdFiles.length > 0 || teamActivities.trim().length > 0;
+  const canGenerate = activeRole === 'hr' && (jdFiles.length > 0 || companyBenefits.trim().length > 0);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -176,8 +210,8 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
             </h2>
             <p className="text-on-surface-variant mt-1">
               {activeRole === 'hr'
-                ? 'Genera perfiles de puesto optimizados y evalúa candidatos con IA.'
-                : 'Define requisitos técnicos y actividades del equipo para generar perfiles precisos.'}
+                ? 'Reúne la JD, beneficios y los inputs del equipo para generar el perfil final con IA.'
+                : 'Revisa los inputs del equipo y la información de la vacante. RH se encargará de generar el perfil final.'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -195,16 +229,48 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
             <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
               <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                Vista: {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
+                {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
               </span>
             </div>
           </div>
         </div>
       </header>
 
+      {/* ── FLOW INDICATOR ── */}
+      <div className="flex items-center gap-4 mb-8 px-4">
+        {[
+          { step: 1, label: activeRole === 'hr' ? 'JD & Beneficios' : 'JD & Documentos', done: jdFiles.length > 0 },
+          { step: 2, label: activeRole === 'hr' ? 'Team Inputs (HM)' : 'Team Inputs', done: hmSubmitted },
+          { step: 3, label: 'Generar con IA', done: generated, hrOnly: true },
+          { step: 4, label: 'Evaluar Candidatos', done: matchScore !== null, hrOnly: true },
+        ]
+          .filter((s) => !s.hrOnly || activeRole === 'hr')
+          .map((s, i, arr) => (
+            <React.Fragment key={s.step}>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black ${
+                    s.done
+                      ? 'bg-secondary text-white'
+                      : 'bg-surface-container-high text-outline'
+                  }`}
+                >
+                  {s.done ? <CheckCircle2 size={14} /> : i + 1}
+                </div>
+                <span className={`text-xs font-bold ${s.done ? 'text-secondary' : 'text-on-surface-variant'}`}>
+                  {s.label}
+                </span>
+              </div>
+              {i < arr.length - 1 && (
+                <div className={`flex-1 h-px ${s.done ? 'bg-secondary' : 'bg-outline-variant/30'}`} />
+              )}
+            </React.Fragment>
+          ))}
+      </div>
+
       {/* ── STEP 1: INPUTS ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Job Description & Skills Upload */}
+        {/* JD Upload — both roles */}
         <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
@@ -251,14 +317,8 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
               <span className="text-sm font-bold text-on-surface-variant group-hover:text-secondary transition-colors">
                 Arrastra archivos PDF o haz clic para subir
               </span>
-              <span className="text-[10px] text-outline mt-1">Job Description, Skills Matrix, Role Requirements</span>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                multiple
-                className="hidden"
-                onChange={handleFileUpload}
-              />
+              <span className="text-[10px] text-outline mt-1">Job Description, Skills Matrix, CVs</span>
+              <input type="file" accept=".pdf,.doc,.docx" multiple className="hidden" onChange={handleFileUpload} />
             </label>
 
             {jdFiles.length > 0 && (
@@ -284,74 +344,161 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
           </div>
         </section>
 
-        {/* Team Activities Input */}
-        <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-              <Users className="text-white" size={20} />
+        {/* RIGHT PANEL: role-specific */}
+        {activeRole === 'hr' ? (
+          /* HR: Company Benefits */
+          <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+                <Gift className="text-white" size={20} />
+              </div>
+              <div>
+                <h3 className="font-headline text-lg font-bold text-on-surface">Beneficios de la Empresa</h3>
+                <p className="text-xs text-on-surface-variant">Se incluirán en la Job Description generada</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-headline text-lg font-bold text-on-surface">Actividades del Equipo</h3>
-              <p className="text-xs text-on-surface-variant">Describe las actividades actuales del equipo receptor</p>
-            </div>
-          </div>
 
-          <textarea
-            value={teamActivities}
-            onChange={(e) => setTeamActivities(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none"
-            placeholder={"Ejemplo:\n- El equipo trabaja con microservicios en Go y gRPC\n- Usan Kubernetes para orquestación\n- Practican trunk-based development\n- Sprint reviews cada 2 semanas\n- Necesitan alguien que lidere la migración a event-driven architecture"}
-            rows={8}
-          />
+            <textarea
+              value={companyBenefits}
+              onChange={(e) => setCompanyBenefits(e.target.value)}
+              className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none"
+              placeholder={"Ejemplo:\n- Trabajo remoto\n- Seguro de gastos médicos\n- Vales de despensa\n- Presupuesto de capacitación\n- Días de vacaciones adicionales"}
+              rows={6}
+            />
 
-          <div className="mt-4 p-4 bg-surface-container-low rounded-xl">
-            <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Contexto rápido</p>
-            <div className="flex flex-wrap gap-2">
-              {['Microservicios', 'Monolito', 'Event-Driven', 'REST APIs', 'GraphQL', 'Data Pipeline'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setTeamActivities((prev) => prev + (prev ? '\n- ' : '- ') + tag)}
-                  className="px-3 py-1.5 bg-surface-container-lowest text-on-surface-variant text-[11px] font-bold rounded-lg border border-outline-variant/20 hover:border-secondary hover:text-secondary transition-all"
-                >
-                  <PlusCircle className="inline mr-1" size={12} />
-                  {tag}
-                </button>
-              ))}
+            <div className="mt-4 p-4 bg-surface-container-low rounded-xl">
+              <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Agregar rápido</p>
+              <div className="flex flex-wrap gap-2">
+                {['Remoto', 'Híbrido', 'Seguro médico', 'Stock options', 'Capacitación', 'Bonos'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setCompanyBenefits((prev) => prev + (prev ? '\n- ' : '- ') + tag)}
+                    className="px-3 py-1.5 bg-surface-container-lowest text-on-surface-variant text-[11px] font-bold rounded-lg border border-outline-variant/20 hover:border-secondary hover:text-secondary transition-all"
+                  >
+                    <PlusCircle className="inline mr-1" size={12} />
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* HM Team Inputs summary (read-only for HR) */}
+            <div className="mt-6 p-4 bg-primary-container/5 border border-primary-container/20 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="text-primary-container" size={16} />
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary-container">
+                  Resumen de Team Inputs (Hiring Manager)
+                </p>
+                {hmSubmitted ? (
+                  <CheckCircle2 className="text-secondary ml-auto" size={14} />
+                ) : (
+                  <AlertTriangle className="text-amber-500 ml-auto" size={14} />
+                )}
+              </div>
+              {hmSubmitted ? (
+                <p className="text-xs text-on-surface-variant leading-relaxed">{MOCK_TEAM_SUMMARY}</p>
+              ) : (
+                <p className="text-xs text-amber-600 font-medium">
+                  El Hiring Manager aún no ha enviado los inputs del equipo.
+                </p>
+              )}
+            </div>
+          </section>
+        ) : (
+          /* HIRING MANAGER: Team Activities Summary (read-only) */
+          <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+                <Users className="text-white" size={20} />
+              </div>
+              <div>
+                <h3 className="font-headline text-lg font-bold text-on-surface">Resumen de Team Inputs</h3>
+                <p className="text-xs text-on-surface-variant">Resumen agregado de las actividades del equipo</p>
+              </div>
+            </div>
+
+            {hmSubmitted ? (
+              <>
+                <div className="p-4 bg-surface-container-low rounded-xl mb-4">
+                  <p className="text-sm text-on-surface leading-relaxed">{MOCK_TEAM_SUMMARY}</p>
+                </div>
+                <div className="flex items-center gap-2 text-secondary">
+                  <CheckCircle2 size={16} />
+                  <span className="text-xs font-bold">Inputs enviados a RH para procesamiento</span>
+                </div>
+              </>
+            ) : (
+              <div className="p-8 border-2 border-dashed border-outline-variant/30 rounded-xl flex flex-col items-center justify-center text-center">
+                <Users className="text-outline-variant mb-3" size={32} />
+                <p className="text-sm font-bold text-on-surface-variant mb-1">
+                  Aún no se han recopilado los inputs del equipo
+                </p>
+                <p className="text-xs text-outline">
+                  Ve al tab de "Team Inputs" para que cada miembro del equipo registre sus actividades.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-surface-container-low rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="text-outline" size={14} />
+                <p className="text-[10px] font-black uppercase tracking-widest text-outline">Tu rol en este paso</p>
+              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Como Hiring Manager, tu trabajo es asegurarte de que el equipo haya llenado sus inputs y que la JD base
+                esté cargada. RH se encargará de combinar toda la información y generar el perfil final con IA.
+              </p>
+            </div>
+          </section>
+        )}
       </div>
 
-      {/* Generate Button */}
-      <div className="flex justify-center mb-12">
-        <button
-          onClick={handleGenerate}
-          disabled={!hasInputs || isGenerating}
-          className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${
-            hasInputs && !isGenerating
-              ? 'bg-primary-container text-white hover:opacity-90 cursor-pointer'
-              : 'bg-surface-container-high text-outline cursor-not-allowed'
-          }`}
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="animate-spin" size={20} />
-              Procesando con IA...
-            </>
-          ) : (
-            <>
-              <Sparkles size={20} />
-              Generar con IA
-            </>
-          )}
-        </button>
-      </div>
+      {/* Generate Button — HR only */}
+      {activeRole === 'hr' && (
+        <div className="flex justify-center mb-12">
+          <button
+            onClick={handleGenerate}
+            disabled={!canGenerate || isGenerating}
+            className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${
+              canGenerate && !isGenerating
+                ? 'bg-primary-container text-white hover:opacity-90 cursor-pointer'
+                : 'bg-surface-container-high text-outline cursor-not-allowed'
+            }`}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Procesando con IA...
+              </>
+            ) : (
+              <>
+                <Sparkles size={20} />
+                Generar con IA
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* HM: info banner about HR generating */}
+      {activeRole === 'hiring_manager' && !generated && (
+        <div className="flex items-center gap-4 p-5 bg-surface-container-low rounded-xl mb-8 border border-outline-variant/20">
+          <div className="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center flex-shrink-0">
+            <Send className="text-outline" size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-on-surface">El perfil será generado por RH</p>
+            <p className="text-xs text-on-surface-variant">
+              Una vez que RH tenga todos los inputs, generará el perfil con IA. Podrás ver los resultados aquí.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── STEP 2: GENERATED OUTPUT ── */}
       {generated && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-            {/* Polished JD */}
             <div className="lg:col-span-7 space-y-6">
               <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
                 <div className="flex justify-between items-start mb-6">
@@ -360,9 +507,7 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                       <BrainCircuit className="text-on-secondary-container" size={20} />
                     </div>
                     <div>
-                      <h3 className="font-headline text-xl font-bold text-on-surface">
-                        {MOCK_GENERATED_JD.title}
-                      </h3>
+                      <h3 className="font-headline text-xl font-bold text-on-surface">{MOCK_GENERATED_JD.title}</h3>
                       <p className="text-xs text-on-surface-variant">Job Description optimizada por IA</p>
                     </div>
                   </div>
@@ -391,7 +536,7 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                   </div>
                 </div>
 
-                <div>
+                <div className="mb-6">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Responsabilidades Clave</h4>
                   <ul className="space-y-3">
                     {MOCK_GENERATED_JD.responsibilities.map((resp, i) => (
@@ -404,10 +549,24 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                     ))}
                   </ul>
                 </div>
+
+                <div className="p-4 bg-secondary/5 border border-secondary/20 rounded-xl">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-secondary mb-3">
+                    <Gift className="inline mr-1" size={12} />
+                    Beneficios Incluidos
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {MOCK_GENERATED_JD.benefits.map((b, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-on-surface">
+                        <CheckCircle2 className="text-secondary flex-shrink-0" size={14} />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
 
-            {/* Interview Questions Panel */}
             <div className="lg:col-span-5">
               <div className="bg-primary-container text-white p-8 rounded-2xl shadow-xl overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 blur-3xl -mr-10 -mt-10 rounded-full" />
@@ -501,7 +660,7 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
           )}
 
           {/* ── MATCH RESULT ── */}
-          {matchScore !== null && (
+          {matchScore !== null && activeRole === 'hr' && (
             <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg mb-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
@@ -510,15 +669,9 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                       <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
                       <circle
                         className={matchScore >= 70 ? 'text-secondary' : 'text-error'}
-                        cx="56"
-                        cy="56"
-                        fill="transparent"
-                        r="48"
-                        stroke="currentColor"
-                        strokeDasharray="301"
-                        strokeDashoffset={301 - (301 * matchScore) / 100}
-                        strokeWidth="8"
-                        strokeLinecap="round"
+                        cx="56" cy="56" fill="transparent" r="48" stroke="currentColor"
+                        strokeDasharray="301" strokeDashoffset={301 - (301 * matchScore) / 100}
+                        strokeWidth="8" strokeLinecap="round"
                       />
                     </svg>
                     <span className={`absolute font-headline font-black text-3xl ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
@@ -544,6 +697,74 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ── REJECTION FEEDBACK (HR only) ── */}
+          {activeRole === 'hr' && generated && (
+            <section className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-error-container rounded-xl flex items-center justify-center">
+                    <XCircle className="text-on-error-container" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-headline text-2xl font-bold text-on-surface">Feedback de Rechazo</h3>
+                    <p className="text-sm text-on-surface-variant">
+                      Feedback generado por IA para candidatos que no hicieron match
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowRejections(!showRejections)}
+                  className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-all"
+                >
+                  <Eye size={14} />
+                  {showRejections ? 'Ocultar' : `Ver ${MOCK_REJECTIONS.length} rechazados`}
+                </button>
+              </div>
+
+              {showRejections && (
+                <div className="space-y-4">
+                  {MOCK_REJECTIONS.map((r, i) => (
+                    <div key={i} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border-l-4 border-error/40">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-on-error-container text-xs font-black">
+                            {r.candidateName.split(' ').map((n) => n[0]).join('')}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-on-surface">{r.candidateName}</p>
+                            <p className="text-[10px] text-error font-bold">Score: {r.score}% — No recomendado</p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-error-container text-on-error-container text-[10px] font-black uppercase rounded-full">
+                          Rechazado
+                        </span>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-2">Gaps Identificados</p>
+                        <div className="flex flex-wrap gap-2">
+                          {r.gaps.map((gap, gi) => (
+                            <span key={gi} className="flex items-center gap-1 px-3 py-1.5 bg-error/5 text-error text-[11px] font-bold rounded-lg border border-error/20">
+                              <AlertTriangle size={12} />
+                              {gap}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-surface-container-low rounded-xl">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-2">
+                          Feedback para el candidato (generado por IA)
+                        </p>
+                        <p className="text-sm text-on-surface leading-relaxed">{r.feedback}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
         </>
       )}

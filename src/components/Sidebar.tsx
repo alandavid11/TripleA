@@ -1,27 +1,30 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Rss, 
-  FileText, 
-  Users, 
-  Settings, 
-  Hexagon 
+import {
+  LayoutDashboard,
+  ClipboardEdit,
+  FileText,
+  Users,
+  Settings,
+  Hexagon,
 } from 'lucide-react';
-import { Screen } from '../types';
+import { Screen, UserRole } from '../types';
 
 interface SidebarProps {
   activeScreen: Screen;
   onScreenChange: (screen: Screen) => void;
+  activeRole: UserRole;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange }) => {
-  const navItems = [
-    { id: 'dashboard' as Screen, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'activity' as Screen, label: 'Activity', icon: Rss },
-    { id: 'generator' as Screen, label: 'Generator', icon: FileText },
-    { id: 'match' as Screen, label: 'Match', icon: Users },
-    { id: 'settings' as Screen, label: 'Settings', icon: Settings },
-  ];
+const allNavItems: { id: Screen; label: string; icon: React.ElementType; roles: UserRole[] }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['hr', 'hiring_manager'] },
+  { id: 'team-inputs', label: 'Team Inputs', icon: ClipboardEdit, roles: ['hiring_manager'] },
+  { id: 'generator', label: 'Generator', icon: FileText, roles: ['hr', 'hiring_manager'] },
+  { id: 'match', label: 'Match', icon: Users, roles: ['hr', 'hiring_manager'] },
+  { id: 'settings', label: 'Settings', icon: Settings, roles: ['hr', 'hiring_manager'] },
+];
+
+export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, activeRole }) => {
+  const navItems = allNavItems.filter((item) => item.roles.includes(activeRole));
 
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col py-6 z-50">
@@ -30,8 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange }
           <Hexagon className="text-secondary-fixed-dim fill-secondary-fixed-dim" size={24} />
         </div>
         <div>
-          <h1 className="text-xl font-black text-slate-900 leading-none font-headline">SkillMirror</h1>
-          <p className="text-[10px] uppercase tracking-widest text-on-primary-container font-bold mt-1">Engineering Intelligence</p>
+          <h1 className="text-xl font-black text-slate-900 leading-none font-headline">TripleA</h1>
+          <p className="text-[10px] uppercase tracking-widest text-on-primary-container font-bold mt-1">Hiring Intelligence</p>
         </div>
       </div>
 
@@ -54,10 +57,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange }
 
       <div className="px-6 mt-auto">
         <div className="p-4 bg-primary-container rounded-xl text-white">
-          <p className="text-xs text-on-primary-container font-semibold mb-2">Sync Status</p>
+          <p className="text-xs text-on-primary-container font-semibold mb-2">
+            {activeRole === 'hr' ? 'Rol Activo' : 'Rol Activo'}
+          </p>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,106,97,0.8)]"></div>
-            <span className="text-sm font-medium">GitHub Connected</span>
+            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-amber-400'} shadow-[0_0_8px_rgba(0,106,97,0.8)]`} />
+            <span className="text-sm font-medium">
+              {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
+            </span>
           </div>
         </div>
       </div>

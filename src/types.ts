@@ -1,18 +1,14 @@
-export type Screen = 'dashboard' | 'activity' | 'generator' | 'match' | 'settings';
+export type Screen = 'dashboard' | 'team-inputs' | 'generator' | 'match' | 'settings';
 
 export type UserRole = 'hr' | 'hiring_manager';
 
-export interface ActivityItem {
+export interface TeamMemberInput {
   id: string;
-  type: 'commit' | 'ticket';
-  title: string;
-  timestamp: string;
-  hash?: string;
-  ticketId?: string;
-  intelligence: {
-    skill: string;
-    level: 'Basic' | 'Intermediate' | 'Advanced' | 'Theory';
-  }[];
+  name: string;
+  role: string;
+  avatar: string;
+  activities: string;
+  submittedAt: string;
 }
 
 export interface Candidate {
@@ -44,4 +40,11 @@ export interface UploadedFile {
   name: string;
   size: string;
   type: 'pdf' | 'doc' | 'other';
+}
+
+export interface RejectionFeedback {
+  candidateName: string;
+  score: number;
+  gaps: string[];
+  feedback: string;
 }
