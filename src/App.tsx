@@ -5,6 +5,7 @@ import { Dashboard } from './screens/Dashboard';
 import { TeamInputs } from './screens/TeamInputs';
 import { Vacancies } from './screens/Vacancies';
 import { Match } from './screens/Match';
+import { TeamMemberPortal } from './screens/TeamMemberPortal';
 import { Screen, UserRole } from './types';
 
 export default function App() {
@@ -13,7 +14,11 @@ export default function App() {
 
   const handleRoleChange = (role: UserRole) => {
     setActiveRole(role);
-    if (role === 'hr' && activeScreen === 'team-inputs') {
+    if (role === 'team_member') {
+      setActiveScreen('team-member');
+    } else if (role === 'hr' && activeScreen === 'team-inputs') {
+      setActiveScreen('dashboard');
+    } else if (activeScreen === 'team-member') {
       setActiveScreen('dashboard');
     }
   };
@@ -28,6 +33,8 @@ export default function App() {
         return <Vacancies activeRole={activeRole} />;
       case 'match':
         return <Match />;
+      case 'team-member':
+        return <TeamMemberPortal />;
       case 'settings':
         return (
           <div className="p-8 max-w-7xl mx-auto">

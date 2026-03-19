@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, UserCircle, Briefcase } from 'lucide-react';
+import { Search, Bell, UserCircle, Briefcase, Users } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface TopBarProps {
@@ -10,6 +10,7 @@ interface TopBarProps {
 const roleProfiles: Record<UserRole, { name: string; title: string; seed: string }> = {
   hr: { name: 'María López', title: 'HR Recruiter', seed: 'maria' },
   hiring_manager: { name: 'Alex Rivera', title: 'Hiring Manager', seed: 'alex' },
+  team_member: { name: 'Carlos Mendoza', title: 'Backend Engineer', seed: 'carlos' },
 };
 
 export const TopBar: React.FC<TopBarProps> = ({ activeRole, onRoleChange }) => {
@@ -22,16 +23,16 @@ export const TopBar: React.FC<TopBarProps> = ({ activeRole, onRoleChange }) => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" size={18} />
           <input
             className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary-container text-sm"
-            placeholder="Search activities, commits, or tickets..."
+            placeholder="Buscar vacantes, candidatos o actividades..."
             type="text"
           />
         </div>
       </div>
       <div className="flex items-center gap-6">
-        <div className="flex bg-surface-container-low rounded-lg p-1">
+        <div className="flex bg-surface-container-low rounded-lg p-1 gap-0.5">
           <button
             onClick={() => onRoleChange('hr')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
               activeRole === 'hr'
                 ? 'bg-primary-container text-white shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
@@ -42,14 +43,25 @@ export const TopBar: React.FC<TopBarProps> = ({ activeRole, onRoleChange }) => {
           </button>
           <button
             onClick={() => onRoleChange('hiring_manager')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
               activeRole === 'hiring_manager'
                 ? 'bg-primary-container text-white shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Briefcase size={14} />
-            Hiring Manager
+            HM
+          </button>
+          <button
+            onClick={() => onRoleChange('team_member')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${
+              activeRole === 'team_member'
+                ? 'bg-secondary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <Users size={14} />
+            Team
           </button>
         </div>
 

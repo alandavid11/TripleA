@@ -21,6 +21,7 @@ const allNavItems: { id: Screen; label: string; icon: React.ElementType; roles: 
   { id: 'vacancies', label: 'Vacancies', icon: Briefcase, roles: ['hr', 'hiring_manager'] },
   { id: 'match', label: 'Match', icon: Users, roles: ['hr', 'hiring_manager'] },
   { id: 'settings', label: 'Settings', icon: Settings, roles: ['hr', 'hiring_manager'] },
+  { id: 'team-member', label: 'Mi Feedback', icon: ClipboardEdit, roles: ['team_member'] },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, activeRole }) => {
@@ -61,9 +62,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
             {activeRole === 'hr' ? 'Rol Activo' : 'Rol Activo'}
           </p>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-amber-400'} shadow-[0_0_8px_rgba(0,106,97,0.8)]`} />
+            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : activeRole === 'hiring_manager' ? 'bg-amber-400' : 'bg-blue-400'} shadow-[0_0_8px_rgba(0,106,97,0.8)]`} />
             <span className="text-sm font-medium">
-              {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
+              {activeRole === 'hr' ? 'Recursos Humanos' : activeRole === 'hiring_manager' ? 'Hiring Manager' : 'Team Member'}
             </span>
           </div>
         </div>

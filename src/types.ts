@@ -1,6 +1,6 @@
-export type Screen = 'dashboard' | 'team-inputs' | 'vacancies' | 'match' | 'settings';
+export type Screen = 'dashboard' | 'team-inputs' | 'vacancies' | 'match' | 'settings' | 'team-member';
 
-export type UserRole = 'hr' | 'hiring_manager';
+export type UserRole = 'hr' | 'hiring_manager' | 'team_member';
 
 export interface TeamMemberInput {
   id: string;

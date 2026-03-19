@@ -223,13 +223,58 @@ const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
   '4': 'Implementaría trunk-based development con feature flags, pipelines de CI con lint/test/build paralelos, deploy automático a staging y canary releases a producción con rollback automático si las métricas caen.',
 };
 
+// ── HM TECHNICAL INTERVIEW QUESTIONS ──
+
+const MOCK_HM_QUESTIONS: Record<string, InterviewQuestion[]> = {
+  cv1: [
+    { id: '1', category: 'Incident Response', question: 'Lunes 9am. Un alert llega: el servicio de pagos está al 95% de CPU y el p99 pasó de 200ms a 4 segundos. No hay deploy reciente. Walk me through tus primeros 10 minutos de diagnóstico.', expectedAnswer: 'Revisar dashboards de Grafana (goroutines, GC, connection pool), tail de logs buscando panics o timeouts, pprof en el pod para flame graph, verificar traffic spike en load balancer. Decisión rápida: rollback o hotfix.', candidateAnswer: '', tailoredFor: 'El equipo tiene on-call rotations — necesitamos saber cómo reaccionas bajo presión real' },
+    { id: '2', category: 'Go Deep Dive', question: 'Tenemos un consumer de Kafka en Go que después de 6 horas de funcionamiento empieza a acumular memoria y se reinicia con OOM cada 30 minutos. ¿Cómo lo diagnosticarías y reproduces el problema?', expectedAnswer: 'Exponer /debug/pprof, heap profile antes/después de 30 min, buscar crecimiento lineal. Goroutine trace para detectar leaks. Reproducir localmente con mismo volumen + race detector. Sospecha: closures capturando referencias en canales o goroutines no terminadas.', candidateAnswer: '', tailoredFor: 'Kafka consumer es parte core del stack del equipo — validar manejo de memoria en Go' },
+    { id: '3', category: 'Architecture Debate', question: 'Alguien del equipo propone usar Redis Streams en lugar de Kafka para los eventos internos, argumentando simplicidad. Tú crees que es un error. ¿Cómo llevas esa conversación?', expectedAnswer: 'ADR formal, spike de 3 días comparando: Kafka tiene replay nativo, consumer groups, retención durable configurable. Redis Streams pierde ordering bajo failover y no tiene exactly-once. Proponer experimento en servicio no crítico para decidir con datos.', candidateAnswer: '', tailoredFor: 'El equipo toma decisiones arquitectónicas colectivas — queremos ver cómo argumentas sin imponer' },
+    { id: '4', category: 'Team Unblock', question: '2 engineers llevan 2 días bloqueados por un desacuerdo: uno quiere GraphQL, otro REST para la nueva API de catálogo. El planning es mañana. ¿Cómo lo resuelves hoy?', expectedAnswer: 'Sesión de 60 min con criterios técnicos objetivos: latencia, overhead de desarrollo, clientes que consumirán la API, flexibilidad futura. Cada uno defiende 15 min con datos. Si empatan, el tech lead decide y documenta. No dejar que la parálisis ate el sprint.', candidateAnswer: '', tailoredFor: 'Rol requiere liderazgo técnico y desbloqueo del equipo — situación real del día a día' },
+  ],
+  cv2: [
+    { id: '1', category: 'PostgreSQL en Producción', question: 'Una query de reporting que analiza órdenes de los últimos 90 días tarda 12 segundos. EXPLAIN muestra un seq scan en una tabla de 50M rows. ¿Cuál es tu diagnosis y plan sin afectar producción?', expectedAnswer: 'EXPLAIN ANALYZE para ver el plan real. Índice en columna de fecha si no existe (CREATE INDEX CONCURRENTLY). Revisar statistics con VACUUM ANALYZE. Verificar table bloat. Si es reporting, considerar read replica o tabla de pre-agregados con actualización programada.', candidateAnswer: '', tailoredFor: 'PostgreSQL avanzado es su fortaleza — queremos ver su profundidad real en casos de producción' },
+    { id: '2', category: 'CI/CD Optimization', question: 'Nuestro pipeline de GitHub Actions tarda 28 minutos. El paso de `go test ./...` toma 18 de esos. ¿Cómo lo atacas? ¿Qué cambiarías en los primeros 2 días?', expectedAnswer: 'Caché de módulos Go con cache-from. Separar tests unitarios (rápidos, en PR) de integración (scheduled job). Matrix de paralelización en GitHub Actions por packages. Identificar tests lentos con go test -v -json y optimizar o extraer. Objetivo: bajar a menos de 8 minutos.', candidateAnswer: '', tailoredFor: 'CI/CD con GitHub Actions es fortaleza del CV — el pipeline actual es un pain point real del equipo' },
+    { id: '3', category: 'On-call Reality', question: 'Son las 2am. El servicio de checkout devuelve 503 al 30% de los requests. SRE te escala. ¿Cuál es tu runbook mental para los primeros 5 minutos?', expectedAnswer: '1) Health checks de pods 2) Rate de errors por endpoint en APM 3) Logs última hora (connection refused, timeouts) 4) Deploy reciente que se haya pasado 5) Si es DB, active connections y slow queries 6) Circuit breaker si el problema es downstream. Comunicar en canal de incident con updates cada 10 min.', candidateAnswer: '', tailoredFor: 'Backend Lead debe manejar incidentes — queremos su proceso mental real bajo presión' },
+    { id: '4', category: 'Terraform Ramp-up', question: 'Tu primera semana: necesitas añadir un nuevo Cloud Run service con variables de Secret Manager a la infra Terraform existente. ¿Cómo lo abordas sin experiencia previa en Terraform?', expectedAnswer: 'Sesión de pair de 2h con un SRE para entender la estructura modular del repo. Leer la documentación de los recursos google_cloud_run_service y google_secret_manager_secret_iam_member. Clonar un módulo similar y adaptar. No hacer push sin code review de alguien del equipo las primeras 2 semanas.', candidateAnswer: '', tailoredFor: 'Gap: Terraform — el equipo lo usa intensivamente, queremos ver si puede rampearse rápido' },
+  ],
+  cv3: [
+    { id: '1', category: 'Kubernetes Pragmático', question: 'Uno de nuestros pods se está evictando frecuentemente en horas pico. El nodo está al 90% de memoria. Kubernetes no es tu stack principal — ¿cuál es tu proceso de razonamiento para diagnosticarlo?', expectedAnswer: 'kubectl describe pod para ver el motivo de eviction. kubectl top nodes/pods para ver consumo real vs limits. Si el pod no tiene memory limits configurados, ese sería el primer fix. Si los tiene y se desborda, revisar con pprof si hay memory leak en el proceso. El proceso de debug es el mismo independientemente del orquestador.', candidateAnswer: '', tailoredFor: 'Gap crítico: sin experiencia directa con K8s — queremos ver su razonamiento, no el conocimiento memorizado' },
+    { id: '2', category: 'Event Sourcing Real', question: 'Tenemos aggregates con 50K eventos por cuenta activa. Rebuilding el estado tarda 8 segundos. Sin snapshotting implementado, ¿cómo lo resuelves sin un rewrite completo?', expectedAnswer: 'Snapshots periódicos: serializar estado completo cada N eventos (1000 como heurística inicial) y guardar con el número de evento como checkpoint. Al rebuildar: cargar último snapshot + procesar solo eventos posteriores. Para cuentas existentes, migración lazy: snapshot al primer acceso. Métricas para validar mejora.', candidateAnswer: '', tailoredFor: 'Event Sourcing es su fortaleza clave — caso práctico real del sistema que van a tocar' },
+    { id: '3', category: 'Code Review Leadership', question: 'Recibes para review un PR de 1200 líneas que refactoriza el dominio de inventario. Sin tests nuevos. El autor es un senior con 4 años en la empresa. ¿Cómo abordas el review y la conversación?', expectedAnswer: 'Entender el cambio a alto nivel primero. El tamaño y la falta de tests son señales de alarma independientemente del seniority. Feedback estructurado en el PR (no Slack). Señalar que cualquier refactor crítico necesita tests de regresión. Ofrecer pair para escribirlos. Si hay pushback, escalar al tech lead con los argumentos documentados.', candidateAnswer: '', tailoredFor: 'Sin liderazgo formal — queremos ver cómo ejerce influencia técnica con pares más senior' },
+    { id: '4', category: 'Cambio Cultural', question: 'Notas que el equipo tiene un patrón de error swallowing en Go: `if err != nil { _ = err }` en servicios críticos. No eres el tech lead. ¿Cómo cambiarías esa práctica?', expectedAnswer: 'Documentar el patrón con ejemplos concretos del codebase y casos reales de fallos silenciosos. Llevarlo como item técnico a la retro o al siguiente tech sync. Hacer un PR modelo en un servicio no crítico mostrando el patrón correcto con métricas de errors caught. Proponer una regla de linter (errcheck) en el pipeline de CI. Cambiar cultura con ejemplos, no con reglas impuestas.', candidateAnswer: '', tailoredFor: 'Sin autoridad formal — probar capacidad de influencia lateral y mejora de calidad del equipo' },
+  ],
+};
+
+const MOCK_HM_ANSWERS: Record<string, Record<string, string>> = {
+  cv1: {
+    '1': 'Primero abro Grafana: reviso goroutines activos, GC pause time y connection pool exhaustion. Luego hago tail de logs de la última hora buscando panics o connection refused. Si no hay nada obvio, accedo al pod con kubectl exec y corro pprof para el flame graph de CPU. Paralelamente verifico si hay traffic spike inusual en el load balancer o un scheduled job que corrió en ese momento. Con esa info decido si es rollback o hotfix.',
+    '2': 'Sospecho goroutine leak. Expongo /debug/pprof en el pod y tomo un heap profile en el minuto 1 y otro a los 30 minutos. Si el heap crece linealmente hay un leak. Reviso el goroutine trace para ver cuáles se acumulan. Para reproducir localmente uso un benchmark con el mismo throughput de mensajes y activo el race detector. La causa más probable: closures en goroutines capturando referencias a buffers que no se liberan.',
+    '3': 'Propongo un ADR formal con un spike de 3 días. Los criterios son objetivos: Kafka tiene replay nativo, consumer groups con offset management, retención durable y exactamente-una-vez con idempotencia. Redis Streams puede simular esto pero pierde ordering bajo failover y no tiene exactly-once garantizado. Propongo probar ambos en el servicio de notificaciones, que no es crítico, y dejar que los datos de latencia y confiabilidad decidan.',
+    '4': 'Los llamo a los dos juntos ese mismo día para una sesión de 60 minutos. Pido que cada uno prepare 15 minutos defendiendo su approach con criterios concretos: latencia esperada, overhead de desarrollo, flexibilidad para evolucionar. Luego el equipo vota con esos criterios. Si empatan yo decido y lo documento en un ADR explicando el razonamiento. No podemos entrar al planning sin esta decisión tomada.',
+  },
+  cv2: {
+    '1': 'Con EXPLAIN ANALYZE identifico si el seq scan tiene un filtro de fecha. Si la columna de fecha no tiene índice, creo uno con CREATE INDEX CONCURRENTLY para no bloquear la tabla. Si ya existe el índice, reviso si las estadísticas están actualizadas con VACUUM ANALYZE. Si la query es solo de reporting, la muevo a la read replica. Si hay table bloat lo verifico con pg_stat_user_tables y programo un VACUUM FULL en ventana de bajo tráfico.',
+    '2': 'Día 1: activo caché de módulos Go en GitHub Actions con cache-from. Día 2: separo los tests en dos grupos: unitarios que corren en cada PR (target en menos de 5 min) e integración que van a un scheduled job. Para los tests Go uso go test -v -json | jq para identificar los 10 más lentos y los optimizo. Con matrix de paralelización puedo bajar de 18 a 4-6 minutos los tests unitarios.',
+    '3': 'Primero reviso el dashboard del APM para ver qué endpoints tienen el 503 y si hay correlación temporal. Luego logs de la última hora buscando connection refused o database timeouts. Verifico si hubo algún deploy en las últimas 4 horas. Si el problema parece en la base de datos, reviso active connections con SELECT count(*) FROM pg_stat_activity. Comunico en el canal de incident cada 10 minutos aunque no tenga resolución todavía.',
+    '4': 'Le pido a alguien de SRE una sesión de pair de 2 horas para entender la estructura modular del repo de Terraform antes de tocar nada. Leo la documentación de google_cloud_run_service y google_secret_manager_secret_iam_member. Clono el módulo de Cloud Run más similar al que necesito y adapto solo las variables. Todo mi código pasa por code review de alguien del equipo las primeras 2 semanas, sin excepción.',
+  },
+  cv3: {
+    '1': 'Con kubectl describe pod veo el motivo exacto de eviction y si hay memory limits configurados. Con kubectl top pods veo el consumo real. Si no hay limits, ese es el primer fix: establecer requests y limits apropiados. Si los tiene y los desborda, el problema está en el proceso Go: uso pprof para verificar si hay memory leak. El proceso de debug es el mismo que en cualquier sistema: observar métricas, acotar el problema, actuar de lo más simple a lo más complejo.',
+    '2': 'Implemento snapshotting periódico: cada 1000 eventos serializo el estado completo del aggregate y lo guardo en una tabla con el número de evento como checkpoint. Al rebuildar, cargo el último snapshot y proceso solo los eventos posteriores. En el peor caso proceso 999 eventos en lugar de 50K. Para los aggregates existentes hago la migración lazy: cuando se accede a uno por primera vez, genero el snapshot on-demand. Agrego métricas para validar la mejora.',
+    '3': 'Primero entiendo el PR a alto nivel antes de revisar línea a línea. El tamaño y la falta de tests son señales de alarma que señalo en el review independientemente del seniority del autor. Dejo el feedback en el PR de forma constructiva: explico el por qué, no solo el qué. Ofrezco hacer un pair session para escribir los tests de regresión juntos. Si hay resistencia, escalo al tech lead con mis argumentos documentados.',
+    '4': 'Primero recopilo ejemplos concretos del codebase donde el error swallowing causó o pudo causar un problema real. Los llevo como item técnico a la siguiente retro con evidencia. Hago un PR modelo en un servicio no crítico mostrando el patrón correcto, con el error logger apropiado. Propongo agregar errcheck como regla de linter en el pipeline de CI. No lo presento como "están haciendo mal", lo presento como "así podemos mejorar juntos".',
+  },
+};
+
 // ── HR STEP DEFINITIONS ──
 
 const HR_STEPS = [
   { key: 'input', label: 'JD & Beneficios' },
   { key: 'generated', label: 'JD Generada' },
   { key: 'screening', label: 'Screening CVs' },
-  { key: 'interview', label: 'Entrevistas' },
+  { key: 'interview', label: 'Entrevista RH' },
+  { key: 'hm-interview', label: 'Entrevista HM' },
 ] as const;
 
 type HrStep = typeof HR_STEPS[number]['key'];
@@ -261,17 +306,25 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const [cvCandidates, setCvCandidates] = useState<CvCandidate[]>([]);
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null);
 
-  // Step 4: Interview
+  // Step 4: HR Interview
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>(MOCK_BASE_QUESTIONS);
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [hrDecision, setHrDecision] = useState<'none' | 'continue' | 'reject'>('none');
+
+  // Step 5: HM Technical Interview
+  const [hmQuestions, setHmQuestions] = useState<InterviewQuestion[]>([]);
+  const [hmMatchScore, setHmMatchScore] = useState<number | null>(null);
+  const [isHmEvaluating, setIsHmEvaluating] = useState(false);
 
   const approvedCandidates = cvCandidates.filter((c) => c.status === 'approved');
   const rejectedCandidates = cvCandidates.filter((c) => c.status === 'rejected');
   const interviewCandidate = cvCandidates.find((c) => c.id === selectedCandidate);
   const answeredAll = questions.every((q) => q.candidateAnswer.trim().length > 0);
   const canGenerate = activeRole === 'hr' && (jdFiles.length > 0 || companyBenefits.trim().length > 0);
+
+  const hmAnsweredAll = hmQuestions.every((q) => q.candidateAnswer.trim().length > 0);
 
   const resetVacancyState = () => {
     setCurrentStep('input');
@@ -281,6 +334,10 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setCvCandidates([]);
     setSelectedCandidate(null);
     setMatchScore(null);
+    setHrDecision('none');
+    setHmQuestions([]);
+    setHmMatchScore(null);
+    setIsHmEvaluating(false);
     setHmSubmitted(false);
     setExpandedCandidate(null);
     setIsGenerating(false);
@@ -300,11 +357,15 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
       setHmSubmitted(true);
       setGenerated(true);
       setCvCandidates(MOCK_CV_CANDIDATES);
-      // Pre-load questions for the first approved candidate (cv1)
+      // Pre-load HR + HM questions for the first approved candidate (cv1)
       const firstCandidateQs = MOCK_PERSONALIZED_QUESTIONS['cv1'] ?? MOCK_BASE_QUESTIONS;
       const firstAnswers = MOCK_PERSONALIZED_ANSWERS['cv1'] ?? {};
       setQuestions(firstCandidateQs.map((q) => ({ ...q, candidateAnswer: firstAnswers[q.id] ?? '' })));
       setSelectedCandidate('cv1');
+      setHrDecision('continue');
+      const hmQs = MOCK_HM_QUESTIONS['cv1'] ?? [];
+      const hmAns = MOCK_HM_ANSWERS['cv1'] ?? {};
+      setHmQuestions(hmQs.map((q) => ({ ...q, candidateAnswer: hmAns[q.id] ?? '' })));
     } else {
       resetVacancyState();
     }
@@ -341,10 +402,37 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const handleSelectCandidate = (id: string) => {
     setSelectedCandidate(id);
     setMatchScore(null);
+    setHrDecision('none');
+    setHmMatchScore(null);
+    setHmQuestions([]);
     const personalized = MOCK_PERSONALIZED_QUESTIONS[id] ?? MOCK_BASE_QUESTIONS;
     const answers = mockMode ? (MOCK_PERSONALIZED_ANSWERS[id] ?? {}) : {};
     setQuestions(personalized.map((q) => ({ ...q, candidateAnswer: answers[q.id] ?? '' })));
     setCurrentStep('interview');
+  };
+
+  const handleHrDecision = (decision: 'continue' | 'reject') => {
+    setHrDecision(decision);
+    if (decision === 'continue' && selectedCandidate) {
+      const hmQs = MOCK_HM_QUESTIONS[selectedCandidate] ?? [];
+      const hmAns = mockMode ? (MOCK_HM_ANSWERS[selectedCandidate] ?? {}) : {};
+      setHmQuestions(hmQs.map((q) => ({ ...q, candidateAnswer: hmAns[q.id] ?? '' })));
+      setCurrentStep('hm-interview');
+    }
+  };
+
+  const handleHmCandidateAnswer = (id: string, answer: string) => {
+    setHmQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, candidateAnswer: answer } : q)));
+  };
+
+  const handleHmEvaluate = () => {
+    setIsHmEvaluating(true);
+    setTimeout(() => {
+      setIsHmEvaluating(false);
+      const answeredCount = hmQuestions.filter((q) => q.candidateAnswer.trim().length > 0).length;
+      const base = answeredCount / hmQuestions.length;
+      setHmMatchScore(Math.round(base * 88 + Math.random() * 12));
+    }, 1800);
   };
 
   const handleCandidateAnswer = (id: string, answer: string) => {
@@ -378,6 +466,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
       case 'generated': return generated;
       case 'screening': return generated;
       case 'interview': return cvCandidates.length > 0 && approvedCandidates.length > 0;
+      case 'hm-interview': return hrDecision === 'continue' && hmQuestions.length > 0;
     }
   };
 
@@ -515,7 +604,8 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
             const done = (s.key === 'input' && (jdFiles.length > 0 || companyBenefits.trim().length > 0))
               || (s.key === 'generated' && generated)
               || (s.key === 'screening' && cvCandidates.length > 0)
-              || (s.key === 'interview' && matchScore !== null);
+              || (s.key === 'interview' && matchScore !== null)
+              || (s.key === 'hm-interview' && hmMatchScore !== null);
             return (
               <React.Fragment key={s.key}>
                 <button
@@ -966,40 +1056,189 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
 
               {/* Match result */}
               {matchScore !== null && (
-                <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg mt-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="relative w-28 h-28 flex items-center justify-center">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
-                          <circle className={matchScore >= 70 ? 'text-secondary' : 'text-error'} cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - (301 * matchScore) / 100} strokeWidth="8" strokeLinecap="round" />
-                        </svg>
-                        <span className={`absolute font-headline font-black text-3xl ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>{matchScore}%</span>
+                <div className="mt-8 space-y-4">
+                  <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="relative w-28 h-28 flex items-center justify-center">
+                          <svg className="w-full h-full transform -rotate-90">
+                            <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
+                            <circle className={matchScore >= 70 ? 'text-secondary' : 'text-error'} cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - (301 * matchScore) / 100} strokeWidth="8" strokeLinecap="round" />
+                          </svg>
+                          <span className={`absolute font-headline font-black text-3xl ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>{matchScore}%</span>
+                        </div>
+                        <div>
+                          <h3 className="font-headline text-2xl font-bold text-on-surface">Resultado: {interviewCandidate.name}</h3>
+                          <p className="text-xs text-on-surface-variant mb-1">CV Score: {interviewCandidate.matchScore}% → Entrevista RH: {matchScore}%</p>
+                          <p className="text-sm text-on-surface-variant mt-1">
+                            {matchScore >= 80 ? 'Excelente candidato. Altamente compatible.' : matchScore >= 60 ? 'Buen candidato con áreas de desarrollo.' : 'Necesita desarrollo significativo en áreas clave.'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-headline text-2xl font-bold text-on-surface">Resultado: {interviewCandidate.name}</h3>
-                        <p className="text-xs text-on-surface-variant mb-1">CV Score: {interviewCandidate.matchScore}% → Entrevista: {matchScore}%</p>
-                        <p className="text-sm text-on-surface-variant mt-1">
-                          {matchScore >= 80 ? 'Excelente candidato. Altamente compatible.' : matchScore >= 60 ? 'Buen candidato con áreas de desarrollo.' : 'Necesita desarrollo significativo en áreas clave.'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className={matchScore >= 70 ? 'text-secondary' : 'text-error'} size={20} />
-                        <span className={`text-sm font-bold ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
-                          {matchScore >= 80 ? 'Recomendado' : matchScore >= 60 ? 'Considerar' : 'No recomendado'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-on-surface-variant">
-                        <TrendingUp size={14} />
-                        <span className="text-[10px] font-bold uppercase">Combinado: {Math.round((interviewCandidate.matchScore + matchScore) / 2)}%</span>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className={matchScore >= 70 ? 'text-secondary' : 'text-error'} size={20} />
+                          <span className={`text-sm font-bold ${matchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
+                            {matchScore >= 80 ? 'Recomendado' : matchScore >= 60 ? 'Considerar' : 'No recomendado'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-on-surface-variant">
+                          <TrendingUp size={14} />
+                          <span className="text-[10px] font-bold uppercase">Score combinado: {Math.round((interviewCandidate.matchScore + matchScore) / 2)}%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* HR Decision */}
+                  {hrDecision === 'none' && (
+                    <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-4">Decisión de RH — ¿Continúa el proceso?</p>
+                      <div className="flex gap-4">
+                        <button onClick={() => handleHrDecision('continue')} className="flex-1 flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-sm bg-secondary text-white hover:opacity-90 transition-all shadow-lg cursor-pointer">
+                          <CheckCircle2 size={20} />
+                          Continuar → Hiring Manager
+                        </button>
+                        <button onClick={() => handleHrDecision('reject')} className="flex-1 flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-sm bg-error/10 text-error border border-error/30 hover:bg-error/20 transition-all cursor-pointer">
+                          <UserX size={20} />
+                          Descartar Candidato
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {hrDecision === 'continue' && (
+                    <div className="flex items-center gap-4 p-5 bg-secondary/10 border border-secondary/20 rounded-2xl">
+                      <CheckCircle2 className="text-secondary flex-shrink-0" size={24} />
+                      <div>
+                        <p className="text-sm font-bold text-secondary">Candidato aprobado por RH</p>
+                        <p className="text-xs text-on-surface-variant">Pasa a entrevista técnica con el Hiring Manager. Ve al paso siguiente para continuar.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {hrDecision === 'reject' && (
+                    <div className="flex items-center gap-4 p-5 bg-error/10 border border-error/20 rounded-2xl">
+                      <UserX className="text-error flex-shrink-0" size={24} />
+                      <div>
+                        <p className="text-sm font-bold text-error">Candidato descartado por RH</p>
+                        <p className="text-xs text-on-surface-variant">El candidato no avanzará en el proceso. Puedes seleccionar otro candidato aprobado.</p>
+                      </div>
+                      <button onClick={() => setHrDecision('none')} className="ml-auto px-4 py-2 rounded-lg text-xs font-bold text-on-surface-variant hover:bg-surface-container-low transition-all">Cambiar decisión</button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
+          )}
+        </section>
+      )}
+
+      {/* STEP 5: HM TECHNICAL INTERVIEW */}
+      {currentStep === 'hm-interview' && activeRole === 'hr' && interviewCandidate && (
+        <section>
+          {/* Context banner */}
+          <div className="flex items-center gap-4 p-5 bg-primary-container/5 border border-primary-container/20 rounded-2xl mb-6">
+            <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container text-sm font-black flex-shrink-0">
+              {interviewCandidate.name.split(' ').map((n) => n[0]).join('')}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-on-surface">{interviewCandidate.name} — Aprobado por RH</p>
+              <p className="text-xs text-on-surface-variant">CV: {interviewCandidate.matchScore}% · Entrevista RH: {matchScore}% · {interviewCandidate.currentRole}</p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-lg">
+              <CheckCircle2 className="text-secondary" size={14} />
+              <span className="text-xs font-bold text-secondary">Aprobado por RH</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
+              <Briefcase className="text-white" size={20} />
+            </div>
+            <div>
+              <h3 className="font-headline text-2xl font-bold text-on-surface">Entrevista Técnica — Hiring Manager</h3>
+              <p className="text-sm text-on-surface-variant">Preguntas de día a día reales, basadas en el stack y retos del equipo</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <Briefcase className="text-primary-container" size={14} />
+            <p className="text-xs font-bold text-primary-container uppercase tracking-widest">Enfoque técnico real — Stack del equipo: Go · Kubernetes · PostgreSQL · Kafka</p>
+          </div>
+
+          <div className="space-y-4">
+            {hmQuestions.map((q, i) => (
+              <div key={q.id} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+                <div className="flex items-start gap-4">
+                  <span className="w-8 h-8 flex items-center justify-center bg-primary-container text-white text-xs font-bold rounded-lg flex-shrink-0">T{i + 1}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-on-surface">{q.question}</p>
+                    <p className="text-[10px] text-outline uppercase font-bold mt-1">{q.category}</p>
+                    {q.tailoredFor && (
+                      <div className="flex items-center gap-1.5 mt-1.5 mb-3">
+                        <Shuffle className="text-primary-container/60 flex-shrink-0" size={11} />
+                        <p className="text-[11px] text-primary-container/70 italic">{q.tailoredFor}</p>
+                      </div>
+                    )}
+                    {!q.tailoredFor && <div className="mb-3" />}
+                    <div className="mb-3 p-3 bg-surface-container-low rounded-lg border-l-2 border-outline-variant/30">
+                      <p className="text-[10px] text-outline uppercase font-bold mb-1">Respuesta esperada (referencia para HM):</p>
+                      <p className="text-xs text-on-surface-variant italic leading-relaxed">{q.expectedAnswer}</p>
+                    </div>
+                    <textarea value={q.candidateAnswer} onChange={(e) => handleHmCandidateAnswer(q.id, e.target.value)} className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary-container transition-all resize-none" placeholder="Escribe la respuesta del candidato a esta pregunta técnica..." rows={3} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center mt-8">
+            <button onClick={handleHmEvaluate} disabled={!hmAnsweredAll || isHmEvaluating} className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${hmAnsweredAll && !isHmEvaluating ? 'bg-primary-container text-white hover:opacity-90 cursor-pointer' : 'bg-surface-container-high text-outline cursor-not-allowed'}`}>
+              {isHmEvaluating ? (<><Loader2 className="animate-spin" size={20} />Evaluando con IA...</>) : (<><BarChart3 size={20} />Evaluar Entrevista Técnica</>)}
+            </button>
+          </div>
+
+          {/* HM Match result */}
+          {hmMatchScore !== null && (
+            <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg mt-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="relative w-28 h-28 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
+                      <circle className={hmMatchScore >= 70 ? 'text-secondary' : 'text-error'} cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - (301 * hmMatchScore) / 100} strokeWidth="8" strokeLinecap="round" />
+                    </svg>
+                    <span className={`absolute font-headline font-black text-3xl ${hmMatchScore >= 70 ? 'text-secondary' : 'text-error'}`}>{hmMatchScore}%</span>
+                  </div>
+                  <div>
+                    <h3 className="font-headline text-2xl font-bold text-on-surface">Resultado Técnico: {interviewCandidate.name}</h3>
+                    <div className="flex items-center gap-3 mt-1 mb-2">
+                      <span className="text-xs text-on-surface-variant">CV: <strong>{interviewCandidate.matchScore}%</strong></span>
+                      <span className="text-outline">→</span>
+                      <span className="text-xs text-on-surface-variant">RH: <strong>{matchScore}%</strong></span>
+                      <span className="text-outline">→</span>
+                      <span className="text-xs text-secondary font-bold">HM: <strong>{hmMatchScore}%</strong></span>
+                    </div>
+                    <p className="text-sm text-on-surface-variant">
+                      {hmMatchScore >= 80 ? 'Candidato fuerte técnicamente. Altamente recomendado.' : hmMatchScore >= 65 ? 'Sólido. Algunas brechas técnicas manejables con onboarding.' : 'Brechas técnicas significativas. Requiere evaluación adicional.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className={hmMatchScore >= 70 ? 'text-secondary' : 'text-error'} size={20} />
+                    <span className={`text-sm font-bold ${hmMatchScore >= 70 ? 'text-secondary' : 'text-error'}`}>
+                      {hmMatchScore >= 80 ? 'Contratar' : hmMatchScore >= 65 ? 'Considerar Oferta' : 'No Continuar'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-on-surface-variant">
+                    <TrendingUp size={14} />
+                    <span className="text-[10px] font-bold uppercase">Score final: {Math.round((interviewCandidate.matchScore + (matchScore ?? 0) + hmMatchScore) / 3)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </section>
       )}
@@ -1031,8 +1270,13 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
               </button>
             )}
             {currentStep === 'screening' && approvedCandidates.length > 0 && (
-              <button onClick={() => { if (!selectedCandidate) setSelectedCandidate(approvedCandidates[0].id); setCurrentStep('interview'); }} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary-container text-white hover:opacity-90 transition-all">
-                Entrevistas<ChevronRight size={18} />
+              <button onClick={() => { if (!selectedCandidate) handleSelectCandidate(approvedCandidates[0].id); else setCurrentStep('interview'); }} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary-container text-white hover:opacity-90 transition-all">
+                Entrevista RH<ChevronRight size={18} />
+              </button>
+            )}
+            {currentStep === 'interview' && hrDecision === 'continue' && (
+              <button onClick={() => setCurrentStep('hm-interview')} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary-container text-white hover:opacity-90 transition-all">
+                Entrevista HM<ChevronRight size={18} />
               </button>
             )}
           </div>
