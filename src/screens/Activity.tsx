@@ -10,7 +10,6 @@ import {
   MoreVertical,
   BrainCircuit
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { ActivityItem } from '../types';
 
 export const Activity: React.FC = () => {
@@ -41,11 +40,7 @@ export const Activity: React.FC = () => {
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="p-8 max-w-7xl mx-auto grid grid-cols-12 gap-8"
-    >
+    <div className="p-8 max-w-7xl mx-auto grid grid-cols-12 gap-8">
       <div className="col-span-12 lg:col-span-8 space-y-8">
         <section className="bg-surface-container-low rounded-xl p-6 shadow-sm">
           <h2 className="font-headline text-2xl text-on-surface font-bold mb-4">Activity Pulse</h2>
@@ -180,6 +175,6 @@ export const Activity: React.FC = () => {
           </div>
         </div>
       </aside>
-    </motion.div>
+    </div>
   );
 };

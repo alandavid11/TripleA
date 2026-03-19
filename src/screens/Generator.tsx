@@ -10,15 +10,10 @@ import {
   ShieldCheck,
   ChevronDown
 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export const Generator: React.FC = () => {
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="p-8 max-w-7xl mx-auto"
-    >
+    <div className="p-8 max-w-7xl mx-auto">
       <header className="flex justify-between items-end mb-12">
         <div>
           <nav className="flex text-[11px] font-bold uppercase tracking-widest text-on-primary-container mb-2">
@@ -203,6 +198,6 @@ export const Generator: React.FC = () => {
         </div>
         <button className="ml-4 text-xs font-bold text-error uppercase">Cancel</button>
       </div>
-    </motion.div>
+    </div>
   );
 };

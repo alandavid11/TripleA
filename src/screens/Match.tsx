@@ -9,7 +9,6 @@ import {
   ChevronRight,
   TrendingUp
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { Candidate } from '../types';
 
 export const Match: React.FC = () => {
@@ -21,11 +20,7 @@ export const Match: React.FC = () => {
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 1.05 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="p-8 max-w-7xl mx-auto space-y-8"
-    >
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-transparent">
           <div className="flex justify-between items-start mb-6">
@@ -205,6 +200,6 @@ export const Match: React.FC = () => {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };

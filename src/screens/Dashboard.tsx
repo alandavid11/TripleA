@@ -10,7 +10,6 @@ import {
   Database,
   LineChart
 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export const Dashboard: React.FC = () => {
   const metrics = [
@@ -40,11 +39,7 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-8 max-w-7xl mx-auto"
-    >
+    <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-10">
         <h2 className="font-headline text-3xl font-extrabold text-on-surface tracking-tight">Engineering Intelligence Dashboard</h2>
         <p className="text-on-surface-variant mt-1">Live assessment of organizational skill distribution and recruitment velocity.</p>
@@ -192,6 +187,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
