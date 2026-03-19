@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './screens/Dashboard';
@@ -10,6 +10,13 @@ import { Screen, UserRole } from './types';
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<Screen>('dashboard');
   const [activeRole, setActiveRole] = useState<UserRole>('hr');
+
+  useEffect(() => {
+    fetch('http://localhost:3001/status')
+      .then(response => response.text())
+      .then(data => console.log('Backend status:', data))
+      .catch(error => console.error('Error fetching backend status:', error));
+  }, []);
 
   const renderScreen = () => {
     switch (activeScreen) {
