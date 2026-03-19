@@ -13,6 +13,7 @@ import {
   BarChart3,
   Loader2,
   PlusCircle,
+  FlaskConical,
 } from 'lucide-react';
 import { UserRole, InterviewQuestion, UploadedFile } from '../types';
 
@@ -63,7 +64,27 @@ const MOCK_GENERATED_JD = {
   ],
 };
 
+const MOCK_TEAM_ACTIVITIES = `- El equipo trabaja con microservicios en Go y gRPC
+- Usan Kubernetes en GCP para orquestación de servicios
+- Practican trunk-based development con CI/CD en GitHub Actions
+- Sprint reviews cada 2 semanas con planning trimestral
+- Necesitan alguien que lidere la migración a event-driven architecture
+- Stack actual: Go, PostgreSQL, Redis, Kafka, Terraform`;
+
+const MOCK_FILES: UploadedFile[] = [
+  { name: 'JD_Senior_Backend_Engineer.pdf', size: '245.3 KB', type: 'pdf' },
+  { name: 'Skills_Matrix_Platform_Team.pdf', size: '128.7 KB', type: 'pdf' },
+];
+
+const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
+  '1': 'Implementaría Kafka como message broker con particionamiento por tenant ID, usando consumer groups para escalar horizontalmente. Aplicaría backpressure con rate limiting y tendría dead-letter queues para mensajes fallidos con retry exponencial.',
+  '2': 'En mi empresa anterior migré un monolito de pagos usando strangler fig pattern. Empecé por las rutas de menor riesgo, usé feature flags para rollback seguro y mantuve ambos sistemas en paralelo 3 meses con tests de regresión automatizados.',
+  '3': 'Prefiero proponer un POC rápido cuando hay desacuerdo técnico. En mi equipo anterior documentábamos las decisiones en ADRs y votábamos basándonos en datos de performance y mantenibilidad, no en opiniones.',
+  '4': 'Implementaría trunk-based development con feature flags, pipelines de CI con lint/test/build paralelos, deploy automático a staging y canary releases a producción con rollback automático si las métricas caen.',
+};
+
 export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
+  const [mockMode, setMockMode] = useState(false);
   const [jdFiles, setJdFiles] = useState<UploadedFile[]>([]);
   const [teamActivities, setTeamActivities] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -73,6 +94,29 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [teamContext, setTeamContext] = useState('Platform Engineering');
   const [roleType, setRoleType] = useState('Senior Backend Engineer');
+
+  const toggleMockMode = () => {
+    const next = !mockMode;
+    setMockMode(next);
+    if (next) {
+      setJdFiles(MOCK_FILES);
+      setTeamActivities(MOCK_TEAM_ACTIVITIES);
+      setTeamContext('Platform Engineering');
+      setRoleType('Senior Backend Engineer');
+      setQuestions(
+        MOCK_QUESTIONS.map((q) => ({
+          ...q,
+          candidateAnswer: MOCK_CANDIDATE_ANSWERS[q.id] ?? '',
+        }))
+      );
+    } else {
+      setJdFiles([]);
+      setTeamActivities('');
+      setGenerated(false);
+      setMatchScore(null);
+      setQuestions(MOCK_QUESTIONS);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -136,11 +180,24 @@ export const Generator: React.FC<GeneratorProps> = ({ activeRole }) => {
                 : 'Define requisitos técnicos y actividades del equipo para generar perfiles precisos.'}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
-            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-              Vista: {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleMockMode}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                mockMode
+                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+            >
+              <FlaskConical size={14} />
+              Mock {mockMode ? 'ON' : 'OFF'}
+            </button>
+            <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
+              <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
+              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                Vista: {activeRole === 'hr' ? 'Recursos Humanos' : 'Hiring Manager'}
+              </span>
+            </div>
           </div>
         </div>
       </header>
