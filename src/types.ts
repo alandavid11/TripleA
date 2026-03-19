@@ -42,9 +42,14 @@ export interface UploadedFile {
   type: 'pdf' | 'doc' | 'other';
 }
 
-export interface RejectionFeedback {
-  candidateName: string;
-  score: number;
+export interface CvCandidate {
+  id: string;
+  name: string;
+  matchScore: number;
+  status: 'approved' | 'rejected';
+  currentRole: string;
+  experience: string;
+  strengths: string[];
   gaps: string[];
   feedback: string;
 }
