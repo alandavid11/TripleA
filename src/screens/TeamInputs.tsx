@@ -76,7 +76,7 @@ export const TeamInputs: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto">
       <header className="mb-10">
         <nav className="flex text-[11px] font-bold uppercase tracking-widest text-on-primary-container mb-2">
-          <span className="opacity-50">TripleA</span>
+          <span className="opacity-50">Talent AI-Quisition</span>
           <span className="mx-2 opacity-50">/</span>
           <span>Team Inputs</span>
         </nav>
@@ -249,3 +249,4 @@ export const TeamInputs: React.FC = () => {
     </div>
   );
 };
+

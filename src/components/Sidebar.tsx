@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
           <Hexagon className="text-secondary-fixed-dim fill-secondary-fixed-dim" size={24} />
         </div>
         <div>
-          <h1 className="text-xl font-black text-slate-900 leading-none font-headline">TripleA</h1>
+          <h1 className="text-xl font-black text-slate-900 leading-none font-headline">Talent AI-Quisition</h1>
           <p className="text-[10px] uppercase tracking-widest text-on-primary-container font-bold mt-1">Hiring Intelligence</p>
         </div>
       </div>
@@ -71,3 +71,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
     </aside>
   );
 };
+
