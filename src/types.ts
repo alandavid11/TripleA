@@ -1,4 +1,4 @@
-export type Screen = 'dashboard' | 'team-inputs' | 'generator' | 'match' | 'settings';
+export type Screen = 'dashboard' | 'team-inputs' | 'vacancies' | 'match' | 'settings';
 
 export type UserRole = 'hr' | 'hiring_manager';
 
@@ -52,4 +52,16 @@ export interface CvCandidate {
   strengths: string[];
   gaps: string[];
   feedback: string;
+  crossMatchVacancy?: string;
+}
+
+export interface Vacancy {
+  id: string;
+  title: string;
+  team: string;
+  status: 'draft' | 'generated' | 'screening' | 'interviewing' | 'completed';
+  createdAt: string;
+  applicants: number;
+  approved: number;
+  rejected: number;
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   ClipboardEdit,
-  FileText,
+  Briefcase,
   Users,
   Settings,
   Hexagon,
@@ -18,7 +18,7 @@ interface SidebarProps {
 const allNavItems: { id: Screen; label: string; icon: React.ElementType; roles: UserRole[] }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['hr', 'hiring_manager'] },
   { id: 'team-inputs', label: 'Team Inputs', icon: ClipboardEdit, roles: ['hiring_manager'] },
-  { id: 'generator', label: 'Generator', icon: FileText, roles: ['hr', 'hiring_manager'] },
+  { id: 'vacancies', label: 'Vacancies', icon: Briefcase, roles: ['hr', 'hiring_manager'] },
   { id: 'match', label: 'Match', icon: Users, roles: ['hr', 'hiring_manager'] },
   { id: 'settings', label: 'Settings', icon: Settings, roles: ['hr', 'hiring_manager'] },
 ];

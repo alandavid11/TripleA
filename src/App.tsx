@@ -3,7 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './screens/Dashboard';
 import { TeamInputs } from './screens/TeamInputs';
-import { Generator } from './screens/Generator';
+import { Vacancies } from './screens/Vacancies';
 import { Match } from './screens/Match';
 import { Screen, UserRole } from './types';
 
@@ -24,8 +24,8 @@ export default function App() {
         return <Dashboard />;
       case 'team-inputs':
         return <TeamInputs />;
-      case 'generator':
-        return <Generator activeRole={activeRole} />;
+      case 'vacancies':
+        return <Vacancies activeRole={activeRole} />;
       case 'match':
         return <Match />;
       case 'settings':
