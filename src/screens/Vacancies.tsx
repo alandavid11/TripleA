@@ -267,6 +267,80 @@ const MOCK_HM_ANSWERS: Record<string, Record<string, string>> = {
   },
 };
 
+// ── HM DIRECT VIEW MOCK DATA (per vacancy) ──
+
+const HM_GENERATED_JDS: Record<string, { title: string; summary: string; skills: string[]; responsibilities: string[] }> = {
+  v2: {
+    title: 'Frontend Lead',
+    summary: 'Buscamos un Frontend Lead para liderar el desarrollo de nuestras interfaces de producto de alto tráfico. El candidato ideal combina excelencia técnica en React/TypeScript con visión de producto y capacidad para establecer estándares de frontend en un equipo de 5 engineers.',
+    skills: ['React', 'TypeScript', 'GraphQL', 'Design Systems', 'Web Performance', 'Storybook', 'Testing (Vitest/Cypress)'],
+    responsibilities: [
+      'Diseñar y mantener el Design System y la arquitectura de componentes.',
+      'Liderar code reviews y establecer estándares de calidad frontend.',
+      'Colaborar con Diseño y Producto en la definición de features.',
+      'Optimizar el rendimiento de las interfaces y los Core Web Vitals.',
+    ],
+  },
+};
+
+interface SreCandidateData {
+  name: string;
+  currentRole: string;
+  experience: string;
+  cvScore: number;
+  hrScore: number;
+  strengths: string[];
+  gaps: string[];
+}
+
+const HM_SRE_CANDIDATE: SreCandidateData = {
+  name: 'Luis Montoya',
+  currentRole: 'SRE Lead @ Clip',
+  experience: '5 años en infraestructura cloud y reliability engineering',
+  cvScore: 82,
+  hrScore: 78,
+  strengths: ['Kubernetes en producción a escala', 'Terraform y GCP expert', 'SLOs y error budgets', 'Incident response liderado'],
+  gaps: ['Poca experiencia con Go específicamente', 'Sin experiencia con Kafka'],
+};
+
+const HM_SRE_QUESTIONS: InterviewQuestion[] = [
+  {
+    id: 'sre1', category: 'Kubernetes Governance',
+    question: 'Tenemos 3 clusters de GKE en multi-region con ~200 pods activos. Esta semana un deployment sin resource limits tumbó el cluster de producción por un OOM cascade. ¿Cómo implementarías governance para evitar que vuelva a pasar?',
+    expectedAnswer: 'Admission controller (OPA Gatekeeper o Kyverno) que rechace Deployments sin resource requests/limits. LimitRange en cada namespace con valores por defecto. Regla en CI que valide manifests con kubeval/conftest antes del merge. PodDisruptionBudgets para servicios críticos.',
+    candidateAnswer: '',
+    tailoredFor: 'Incidente real del equipo esta semana — queremos saber su approach sistemático, no el parche',
+  },
+  {
+    id: 'sre2', category: 'Terraform Drift',
+    question: 'Alguien hizo un `terraform apply` manual en producción y rompió el state. El statefile ahora no coincide con la infra real. Hay recursos huérfanos y algunos que el state no conoce. ¿Cuál es tu proceso?',
+    expectedAnswer: 'terraform plan para ver el drift. terraform state list para inventario. terraform state rm para recursos desincronizados + terraform import para re-importarlos. Nunca apply forzado. Post-mortem sobre cómo prevenir manual applies (drift detection job, protección del statefile remoto, CI obligatorio).',
+    candidateAnswer: '',
+    tailoredFor: 'El equipo usa Terraform intensivamente — necesitamos saber cómo maneja situaciones de emergencia en IaC',
+  },
+  {
+    id: 'sre3', category: 'Observabilidad',
+    question: 'Nuestros SLOs están configurados en Prometheus pero el equipo de Producto no los entiende. Los dashboards de Grafana son ilegibles para no-técnicos. ¿Cómo harías que la observabilidad sea útil para toda la organización?',
+    expectedAnswer: 'Dashboards separados: técnico (SLIs detallados, error budget burndown por servicio) y ejecutivo (uptime %, requests exitosos, latencia en lenguaje de negocio con semáforos verde/amarillo/rojo). Alertas semanales por email con resumen automático. SLO review mensual con Producto.',
+    candidateAnswer: '',
+    tailoredFor: 'El equipo tiene un problema real de comunicación de reliability hacia Producto — queremos ver su solución',
+  },
+  {
+    id: 'sre4', category: 'Incident Response',
+    question: '3am: el service mesh (Istio) bloqueó el 100% del tráfico entre el API Gateway y el servicio de autenticación. Uptime = 0%. SRE te escala. ¿Cuál es tu runbook mental los primeros 5 minutos?',
+    expectedAnswer: 'Rollback del cambio más reciente de Istio. Si no hay cambio, revisar VirtualService y DestinationRule del servicio de auth. Verificar certificados mTLS (expiración). Si persiste, bypass temporal del mesh para auth mientras se investiga. Updates en canal de incident cada 5 min. Nunca investigar en silencio durante un P0.',
+    candidateAnswer: '',
+    tailoredFor: 'On-call rotation es parte del rol — necesitamos ver su compostura y proceso bajo presión extrema',
+  },
+];
+
+const HM_SRE_ANSWERS: Record<string, string> = {
+  sre1: 'Implementaría Kyverno como admission controller porque es más sencillo de mantener que OPA para este caso. Las políticas rechazan cualquier Deployment sin resource requests y limits definidos. También agregaría LimitRange en cada namespace con valores por defecto razonables como fallback. En el pipeline de CI agregaría conftest validando los manifests contra las políticas antes del merge, para que el error se vea en el PR, no en el cluster.',
+  sre2: 'Primero: terraform plan -detailed-exitcode para ver exactamente qué muestra el drift. Segundo: terraform state list para tener el inventario completo del state. Para los recursos que están en la infra pero no en el state, hago terraform import uno por uno después de identificarlos con la API de GCP. Para los que están en el state pero ya no existen, terraform state rm. Nunca hago terraform apply hasta tener el plan limpio. Después: post-mortem con la acción correctiva de bloquear applies manuales vía IAM y enforcement de CI obligatorio.',
+  sre3: 'Creo dos niveles de dashboards. El dashboard técnico para el equipo de infra: SLIs detallados, error budget burndown por servicio con alertas en Slack cuando quema más del 5% por hora. El dashboard ejecutivo para Producto: tres métricas en lenguaje de negocio con semáforos de color, uptime del último mes y latencia p95 expresada como "X de cada 100 usuarios tuvieron respuesta lenta". Y un email automático semanal el lunes con el resumen de confiabilidad de la semana anterior.',
+  sre4: 'Primero reviso el changelog de Istio de las últimas 4 horas. Si hubo un cambio de VirtualService o DestinationRule, rollback inmediato. Si no hay cambio reciente, verifico que los certificados mTLS del namespace de autenticación no hayan expirado con istioctl proxy-status. Si el problema persiste más de 3 minutos y no tengo la causa, hago bypass temporal del mesh solo para el servicio de auth usando un DestinationRule de exclusión, restauro el uptime y luego investigo con calma. Updates en el canal de P0 cada 5 minutos, así no tenga nada nuevo que reportar.',
+};
+
 // ── HR STEP DEFINITIONS ──
 
 const HR_STEPS = [
@@ -313,10 +387,16 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [hrDecision, setHrDecision] = useState<'none' | 'continue' | 'reject'>('none');
 
-  // Step 5: HM Technical Interview
+  // Step 5: HM Technical Interview (HR wizard flow)
   const [hmQuestions, setHmQuestions] = useState<InterviewQuestion[]>([]);
   const [hmMatchScore, setHmMatchScore] = useState<number | null>(null);
   const [isHmEvaluating, setIsHmEvaluating] = useState(false);
+
+  // HM direct view state (when role = hiring_manager)
+  const [hmMockMode, setHmMockMode] = useState(false);
+  const [hmDirectQuestions, setHmDirectQuestions] = useState<InterviewQuestion[]>([]);
+  const [hmDirectScore, setHmDirectScore] = useState<number | null>(null);
+  const [isHmDirectEvaluating, setIsHmDirectEvaluating] = useState(false);
 
   const approvedCandidates = cvCandidates.filter((c) => c.status === 'approved');
   const rejectedCandidates = cvCandidates.filter((c) => c.status === 'rejected');
@@ -369,6 +449,29 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     } else {
       resetVacancyState();
     }
+  };
+
+  const toggleHmMockMode = () => {
+    const next = !hmMockMode;
+    setHmMockMode(next);
+    if (next) {
+      setHmDirectQuestions(HM_SRE_QUESTIONS.map((q) => ({ ...q, candidateAnswer: HM_SRE_ANSWERS[q.id] ?? '' })));
+    } else {
+      setHmDirectQuestions([]);
+      setHmDirectScore(null);
+    }
+  };
+
+  const handleHmDirectEvaluate = () => {
+    setIsHmDirectEvaluating(true);
+    setTimeout(() => {
+      setIsHmDirectEvaluating(false);
+      setHmDirectScore(84);
+    }, 2200);
+  };
+
+  const handleHmDirectAnswer = (id: string, answer: string) => {
+    setHmDirectQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, candidateAnswer: answer } : q)));
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -633,21 +736,344 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
         </div>
       )}
 
-      {/* HM: simplified view */}
-      {activeRole === 'hiring_manager' && (
-        <div className="flex items-center gap-4 p-5 bg-surface-container-low rounded-xl mb-8 border border-outline-variant/20">
-          <div className="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center flex-shrink-0"><Send className="text-outline" size={18} /></div>
-          <div>
-            <p className="text-sm font-bold text-on-surface">Vista de Hiring Manager</p>
-            <p className="text-xs text-on-surface-variant">Revisa los inputs y documentos de la vacante. RH gestiona el proceso de selección.</p>
-          </div>
-        </div>
-      )}
+      {/* ── HM DIRECT VIEW (full status-based experience) ── */}
+      {activeRole === 'hiring_manager' && (() => {
+        const vacancy = MOCK_VACANCIES.find((v) => v.id === selectedVacancy)!;
 
-      {/* ── PAGE CONTENT ── */}
+        // ── STATUS: DRAFT ──
+        if (vacancy.status === 'draft') {
+          return (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 p-5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0"><FileText className="text-white" size={18} /></div>
+                <div>
+                  <p className="text-sm font-bold text-on-surface">Vacante en borrador</p>
+                  <p className="text-xs text-on-surface-variant">Sube la JD base y confirma los inputs del equipo para enviar a RH.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center"><FileText className="text-white" size={20} /></div>
+                    <div><h3 className="font-headline text-lg font-bold text-on-surface">Job Description Base</h3><p className="text-xs text-on-surface-variant">Sube el PDF de la JD o skills matrix que recibirás de tu cliente</p></div>
+                  </div>
+                  <label className="flex flex-col items-center justify-center p-10 border-2 border-dashed border-outline-variant/40 rounded-xl cursor-pointer hover:border-primary-container hover:bg-primary-container/5 transition-all group">
+                    <Upload className="text-outline-variant group-hover:text-primary-container mb-3 transition-colors" size={32} />
+                    <span className="text-sm font-bold text-on-surface-variant group-hover:text-primary-container transition-colors">Arrastra o haz clic para subir</span>
+                    <span className="text-[10px] text-outline mt-1">PDF, DOCX</span>
+                    <input type="file" accept=".pdf,.doc,.docx" multiple className="hidden" onChange={handleFileUpload} />
+                  </label>
+                  {jdFiles.length > 0 && (
+                    <div className="space-y-2 mt-4">
+                      {jdFiles.map((file, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-error-container rounded-lg flex items-center justify-center"><FileText className="text-on-error-container" size={16} /></div>
+                            <div><p className="text-sm font-bold text-on-surface">{file.name}</p><p className="text-[10px] text-outline">{file.size}</p></div>
+                          </div>
+                          <button onClick={() => removeFile(i)} className="p-1 hover:bg-surface-container-high rounded transition-colors"><X className="text-outline" size={16} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+                <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center"><Users className="text-white" size={20} /></div>
+                    <div><h3 className="font-headline text-lg font-bold text-on-surface">Team Inputs</h3><p className="text-xs text-on-surface-variant">Resumen de las actividades del equipo (3/4 enviados)</p></div>
+                  </div>
+                  <div className="p-4 bg-surface-container-low rounded-xl mb-4">
+                    <p className="text-sm text-on-surface leading-relaxed">{MOCK_TEAM_SUMMARY}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-secondary"><CheckCircle2 size={16} /><span className="text-xs font-bold">3 de 4 miembros han enviado su feedback</span></div>
+                </section>
+              </div>
+            </div>
+          );
+        }
+
+        // ── STATUS: GENERATED ──
+        if (vacancy.status === 'generated') {
+          const jd = HM_GENERATED_JDS[vacancy.id] ?? {
+            title: vacancy.title,
+            summary: 'Job Description generada por IA combinando los inputs de RH y el equipo. Optimizada para atraer candidatos con el perfil exacto que necesita el equipo.',
+            skills: ['React', 'TypeScript', 'GraphQL', 'Design Systems', 'Storybook', 'CSS-in-JS'],
+            responsibilities: [
+              'Liderar el desarrollo de nuevas features de producto en el frontend.',
+              'Mantener y evolucionar el Design System de la empresa.',
+              'Colaborar con Diseño y PM en la definición de experiencias.',
+              'Establecer estándares de calidad y performance en el equipo de frontend.',
+            ],
+          };
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-5 bg-secondary/10 border border-secondary/30 rounded-xl">
+                <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0"><BrainCircuit className="text-white" size={18} /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-on-surface">JD Generada por RH — Lista para publicar</p>
+                  <p className="text-xs text-on-surface-variant">RH procesó los inputs y generó la Job Description final. Revisa y aprueba para postear la vacante.</p>
+                </div>
+                <span className="px-3 py-1 bg-secondary text-white text-[10px] font-black uppercase tracking-widest rounded-full">AI Generated</span>
+              </div>
+              <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+                <h3 className="font-headline text-2xl font-bold text-on-surface mb-2">{jd.title}</h3>
+                <p className="text-sm text-on-surface leading-relaxed mb-6">{jd.summary}</p>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-4 bg-surface-container-low rounded-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Skills Requeridas</h4>
+                    <div className="flex flex-wrap gap-2">{jd.skills.map((s) => (<span key={s} className="px-3 py-1.5 bg-secondary-container text-on-secondary-container rounded-lg text-[11px] font-bold">{s}</span>))}</div>
+                  </div>
+                  <div className="p-4 bg-surface-container-low rounded-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-outline mb-3">Responsabilidades</h4>
+                    <ul className="space-y-2">{jd.responsibilities.map((r, i) => (<li key={i} className="flex items-start gap-2 text-xs text-on-surface-variant"><CheckCircle2 className="text-secondary flex-shrink-0 mt-0.5" size={12} />{r}</li>))}</ul>
+                  </div>
+                </div>
+                <button className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary-container text-white hover:opacity-90 transition-all shadow-lg">
+                  <Send size={16} />Aprobar y publicar vacante
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // ── STATUS: SCREENING ──
+        if (vacancy.status === 'screening') {
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-5 bg-primary-container/10 border border-primary-container/30 rounded-xl">
+                <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center flex-shrink-0"><BarChart3 className="text-white" size={18} /></div>
+                <div>
+                  <p className="text-sm font-bold text-on-surface">Screening en progreso — RH está evaluando candidatos</p>
+                  <p className="text-xs text-on-surface-variant">Se han recibido {vacancy.applicants} CVs. RH está haciendo el pre-filtro con IA y seleccionará los mejores perfiles para entrevista.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                  <p className="font-headline text-3xl font-black text-primary-container">{vacancy.applicants}</p>
+                  <p className="text-[10px] uppercase font-bold text-outline mt-1">CVs recibidos</p>
+                </div>
+                <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                  <p className="font-headline text-3xl font-black text-secondary">{vacancy.approved ?? Math.round(vacancy.applicants * 0.3)}</p>
+                  <p className="text-[10px] uppercase font-bold text-outline mt-1">En evaluación</p>
+                </div>
+                <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                  <p className="font-headline text-3xl font-black text-outline">...</p>
+                  <p className="text-[10px] uppercase font-bold text-outline mt-1">Pendiente RH</p>
+                </div>
+              </div>
+              <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-4">Candidatos en evaluación (vista previa)</p>
+                <div className="space-y-3">
+                  {MOCK_CV_CANDIDATES.slice(0, 3).map((c) => (
+                    <div key={c.id} className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.matchScore >= 75 ? 'bg-secondary' : c.matchScore >= 60 ? 'bg-amber-400' : 'bg-error'}`} />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-on-surface">{c.name}</p>
+                        <p className="text-xs text-on-surface-variant">{c.currentRole}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-headline text-xl font-black ${c.matchScore >= 75 ? 'text-secondary' : c.matchScore >= 60 ? 'text-amber-500' : 'text-error'}`}>{c.matchScore}%</p>
+                        <p className="text-[10px] text-outline">match</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-outline text-center mt-4">Decisión final de entrevista: RH</p>
+              </div>
+            </div>
+          );
+        }
+
+        // ── STATUS: INTERVIEWING → HM Technical Interview ──
+        if (vacancy.status === 'interviewing') {
+          const hmDirectAnsweredAll = hmDirectQuestions.every((q) => q.candidateAnswer.trim().length > 0);
+          return (
+            <div className="space-y-6">
+              {/* Mock toggle for HM */}
+              <div className="flex items-center justify-between p-5 bg-secondary/10 border border-secondary/30 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0"><Briefcase className="text-white" size={18} /></div>
+                  <div>
+                    <p className="text-sm font-bold text-on-surface">Candidato listo para tu entrevista técnica</p>
+                    <p className="text-xs text-on-surface-variant">RH aprobó a {HM_SRE_CANDIDATE.name} tras la entrevista de screening. Ahora es tu turno.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={toggleHmMockMode}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${hmMockMode ? 'bg-amber-500 text-white shadow-md' : 'bg-surface-container-high text-on-surface-variant hover:bg-amber-500/10 hover:text-amber-600 border border-amber-400/30'}`}
+                >
+                  <FlaskConical size={14} />
+                  {hmMockMode ? 'Mock ON' : 'Mock'}
+                </button>
+              </div>
+
+              {/* Candidate context card */}
+              <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-4">Candidato aprobado por RH</p>
+                <div className="flex items-start gap-5">
+                  <img src="https://picsum.photos/seed/luis/100/100" alt={HM_SRE_CANDIDATE.name} className="w-14 h-14 rounded-xl object-cover border-2 border-surface-container-high" referrerPolicy="no-referrer" />
+                  <div className="flex-1">
+                    <h3 className="font-headline text-xl font-bold text-on-surface">{HM_SRE_CANDIDATE.name}</h3>
+                    <p className="text-sm text-on-surface-variant">{HM_SRE_CANDIDATE.currentRole}</p>
+                    <p className="text-xs text-outline mt-0.5">{HM_SRE_CANDIDATE.experience}</p>
+                    <div className="flex gap-4 mt-3">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-container/10 rounded-lg">
+                        <span className="text-[10px] font-bold text-outline uppercase">CV Match</span>
+                        <span className="font-headline font-black text-primary-container text-lg">{HM_SRE_CANDIDATE.cvScore}%</span>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-lg">
+                        <span className="text-[10px] font-bold text-outline uppercase">RH Score</span>
+                        <span className="font-headline font-black text-secondary text-lg">{HM_SRE_CANDIDATE.hrScore}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-secondary mb-1">Fortalezas</p>
+                      {HM_SRE_CANDIDATE.strengths.map((s) => <p key={s} className="flex items-center gap-1 text-on-surface-variant mb-0.5"><CheckCircle2 className="text-secondary" size={10} />{s}</p>)}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-amber-500 mb-1">Gaps</p>
+                      {HM_SRE_CANDIDATE.gaps.map((g) => <p key={g} className="flex items-center gap-1 text-on-surface-variant mb-0.5"><AlertTriangle className="text-amber-400" size={10} />{g}</p>)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions or empty state */}
+              {hmDirectQuestions.length === 0 ? (
+                <div className="p-10 border-2 border-dashed border-outline-variant/30 rounded-2xl flex flex-col items-center text-center">
+                  <Briefcase className="text-outline-variant mb-4" size={40} />
+                  <p className="text-sm font-bold text-on-surface-variant mb-1">Preguntas técnicas listas para cargar</p>
+                  <p className="text-xs text-outline">Activa el modo Mock para ver las preguntas personalizadas para {HM_SRE_CANDIDATE.name} y el rol SRE.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <Shuffle className="text-secondary" size={14} />
+                    <p className="text-xs font-black text-secondary uppercase tracking-widest">Entrevista Técnica Personalizada — Stack: Kubernetes · Terraform · GCP · Prometheus</p>
+                  </div>
+                  {hmDirectQuestions.map((q, i) => (
+                    <div key={q.id} className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <span className="w-8 h-8 flex items-center justify-center bg-secondary text-white text-xs font-bold rounded-lg flex-shrink-0">T{i + 1}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-on-surface">{q.question}</p>
+                          <p className="text-[10px] text-outline uppercase font-bold mt-1">{q.category}</p>
+                          {q.tailoredFor && (
+                            <div className="flex items-center gap-1.5 mt-1.5 mb-3">
+                              <Shuffle className="text-secondary/60 flex-shrink-0" size={11} />
+                              <p className="text-[11px] text-secondary/70 italic">{q.tailoredFor}</p>
+                            </div>
+                          )}
+                          <div className="mb-3 p-3 bg-surface-container-low rounded-lg border-l-2 border-outline-variant/30">
+                            <p className="text-[10px] text-outline uppercase font-bold mb-1">Respuesta esperada (tu referencia):</p>
+                            <p className="text-xs text-on-surface-variant italic leading-relaxed">{q.expectedAnswer}</p>
+                          </div>
+                          <textarea
+                            value={q.candidateAnswer}
+                            onChange={(e) => handleHmDirectAnswer(q.id, e.target.value)}
+                            className="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none"
+                            placeholder="Escribe la respuesta del candidato..."
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-center mt-6">
+                    <button
+                      onClick={handleHmDirectEvaluate}
+                      disabled={!hmDirectAnsweredAll || isHmDirectEvaluating}
+                      className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${hmDirectAnsweredAll && !isHmDirectEvaluating ? 'bg-secondary text-white hover:opacity-90 cursor-pointer' : 'bg-surface-container-high text-outline cursor-not-allowed'}`}
+                    >
+                      {isHmDirectEvaluating ? (<><Loader2 className="animate-spin" size={20} />Evaluando...</>) : (<><BarChart3 size={20} />Evaluar Entrevista Técnica</>)}
+                    </button>
+                  </div>
+
+                  {hmDirectScore !== null && (
+                    <div className="bg-surface-container-lowest p-8 rounded-2xl shadow-lg mt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="relative w-28 h-28 flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90">
+                              <circle className="text-surface-container-high" cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeWidth="8" />
+                              <circle className={hmDirectScore >= 70 ? 'text-secondary' : 'text-error'} cx="56" cy="56" fill="transparent" r="48" stroke="currentColor" strokeDasharray="301" strokeDashoffset={301 - (301 * hmDirectScore) / 100} strokeWidth="8" strokeLinecap="round" />
+                            </svg>
+                            <span className={`absolute font-headline font-black text-3xl ${hmDirectScore >= 70 ? 'text-secondary' : 'text-error'}`}>{hmDirectScore}%</span>
+                          </div>
+                          <div>
+                            <h3 className="font-headline text-2xl font-bold text-on-surface">Resultado Técnico: {HM_SRE_CANDIDATE.name}</h3>
+                            <div className="flex items-center gap-3 mt-1 mb-2">
+                              <span className="text-xs text-on-surface-variant">CV: <strong className="text-primary-container">{HM_SRE_CANDIDATE.cvScore}%</strong></span>
+                              <span className="text-outline">→</span>
+                              <span className="text-xs text-on-surface-variant">RH: <strong className="text-outline">{HM_SRE_CANDIDATE.hrScore}%</strong></span>
+                              <span className="text-outline">→</span>
+                              <span className="text-xs font-bold">HM: <strong className="text-secondary">{hmDirectScore}%</strong></span>
+                            </div>
+                            <p className="text-sm text-on-surface-variant">
+                              {hmDirectScore >= 80 ? 'Candidato fuerte técnicamente. Altamente recomendado para contratación.' : 'Sólido. Algunas brechas manejables con onboarding adecuado.'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-3">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className={hmDirectScore >= 70 ? 'text-secondary' : 'text-error'} size={20} />
+                            <span className={`text-sm font-bold ${hmDirectScore >= 70 ? 'text-secondary' : 'text-error'}`}>
+                              {hmDirectScore >= 80 ? 'Contratar' : 'Considerar Oferta'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-on-surface-variant">
+                            <TrendingUp size={14} />
+                            <span className="text-[10px] font-bold uppercase">Score final: {Math.round((HM_SRE_CANDIDATE.cvScore + HM_SRE_CANDIDATE.hrScore + hmDirectScore) / 3)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // ── STATUS: COMPLETED ──
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-5 bg-secondary/10 border border-secondary/30 rounded-xl">
+              <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0"><CheckCircle2 className="text-white" size={18} /></div>
+              <div>
+                <p className="text-sm font-bold text-on-surface">Proceso completado exitosamente</p>
+                <p className="text-xs text-on-surface-variant">La vacante fue cubierta. El candidato seleccionado pasó por todo el proceso de evaluación.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                <p className="font-headline text-3xl font-black text-primary-container">{vacancy.applicants}</p>
+                <p className="text-[10px] uppercase font-bold text-outline mt-1">CVs recibidos</p>
+              </div>
+              <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                <p className="font-headline text-3xl font-black text-secondary">{vacancy.approved ?? 1}</p>
+                <p className="text-[10px] uppercase font-bold text-outline mt-1">Contratados</p>
+              </div>
+              <div className="bg-surface-container-lowest p-5 rounded-2xl text-center shadow-sm">
+                <p className="font-headline text-3xl font-black text-error">{vacancy.rejected ?? vacancy.applicants - 1}</p>
+                <p className="text-[10px] uppercase font-bold text-outline mt-1">Descartados</p>
+              </div>
+            </div>
+            <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm text-center">
+              <TrendingUp className="text-secondary mx-auto mb-3" size={32} />
+              <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Proceso archivado</h3>
+              <p className="text-sm text-on-surface-variant">El proceso de contratación para esta vacante ha concluido. Puedes revisar el historial en el reporte final.</p>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── PAGE CONTENT (HR ONLY below) ── */}
 
       {/* STEP 1: INPUTS */}
-      {(currentStep === 'input' || activeRole === 'hiring_manager') && (
+      {activeRole === 'hr' && (currentStep === 'input') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* JD Upload */}
           <section className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">

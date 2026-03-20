@@ -6,6 +6,7 @@ import {
   UserCircle,
   MessageCircle,
   Lightbulb,
+  BarChart3,
 } from 'lucide-react';
 import { TeamMemberInput } from '../types';
 
@@ -15,24 +16,30 @@ const INITIAL_MEMBERS: TeamMemberInput[] = [
     name: 'Carlos Mendoza',
     role: 'Backend Engineer',
     avatar: 'carlos',
-    activities: '',
-    submittedAt: '',
+    activities: `Me la paso haciendo APIs en Go y code reviews. Esta semana migré varios endpoints de REST a gRPC y estuve optimizando queries lentas en PostgreSQL que afectaban el dashboard de reportes.
+
+Uso Kafka para eventos entre microservicios y Kubernetes para los deployments. Los viernes hago pair programming con los juniors. El mayor dolor del equipo ahora mismo es que necesitamos a alguien que tome ownership de la migración a event-driven architecture, yo ya estoy muy saturado con los servicios de pagos.`,
+    submittedAt: '18 Mar 2026, 09:14',
   },
   {
     id: '2',
     name: 'Sarah Chen',
     role: 'Full-Stack Developer',
     avatar: 'sarah',
-    activities: '',
-    submittedAt: '',
+    activities: `Trabajo principalmente en el frontend con React/TypeScript, pero también toco el backend de Go cuando es necesario. Esta semana conecté el nuevo flujo de onboarding del producto con los endpoints del equipo y tuve que crear dos rutas nuevas en el API Gateway.
+
+Mi mayor reto es mantener consistencia entre los contratos de API y la UI cuando el backend evoluciona rápido. Necesitamos alguien que nos ayude con la carga de backend, especialmente en las integraciones con servicios externos.`,
+    submittedAt: '18 Mar 2026, 10:32',
   },
   {
     id: '3',
     name: 'Marcus Thorne',
-    role: 'DevOps Engineer',
+    role: 'DevOps / SRE Engineer',
     avatar: 'marcus',
-    activities: '',
-    submittedAt: '',
+    activities: `Mantengo toda la infraestructura en GCP con Terraform y Kubernetes. Esta semana configuré los cluster autoscalers para los nodos de producción y resolví un problema de OOM en los pods del servicio de eventos (no tenían memory limits, clásico).
+
+También mantengo los pipelines de GitHub Actions — el build de Go está tardando 28 minutos y lo quiero bajar. Trabajo mucho con Prometheus y Grafana para monitoring. El equipo necesita a alguien que entienda bien Kubernetes y que pueda autosuficientarse en infra, yo no puedo ser el único que sabe tocar el cluster.`,
+    submittedAt: '17 Mar 2026, 16:55',
   },
   {
     id: '4',
@@ -49,6 +56,17 @@ const PROMPTS = [
   '¿Cuál es la parte más retadora de tu trabajo actual?',
   '¿Qué tipo de persona crees que haría un buen fit en el equipo?',
   '¿Qué actividades ocupan la mayor parte de tu semana?',
+];
+
+const TECH_SUMMARY = [
+  { label: 'Go', count: 3 },
+  { label: 'Kubernetes', count: 2 },
+  { label: 'PostgreSQL', count: 2 },
+  { label: 'Kafka', count: 2 },
+  { label: 'React / TS', count: 2 },
+  { label: 'Terraform', count: 1 },
+  { label: 'gRPC', count: 1 },
+  { label: 'GitHub Actions', count: 1 },
 ];
 
 export const TeamInputs: React.FC = () => {
@@ -76,7 +94,7 @@ export const TeamInputs: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto">
       <header className="mb-10">
         <nav className="flex text-[11px] font-bold uppercase tracking-widest text-on-primary-container mb-2">
-          <span className="opacity-50">Talent AI-Quisition</span>
+          <span className="opacity-50">TripleA</span>
           <span className="mx-2 opacity-50">/</span>
           <span>Team Inputs</span>
         </nav>
@@ -86,7 +104,7 @@ export const TeamInputs: React.FC = () => {
               Actividades del Equipo
             </h2>
             <p className="text-on-surface-variant mt-1">
-              Cada integrante describe sus actividades diarias de forma informal para generar un perfil real de la vacante.
+              Cada integrante describe sus actividades diarias para generar un perfil real de la vacante.
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
@@ -127,6 +145,11 @@ export const TeamInputs: React.FC = () => {
                 <p className={`text-[10px] font-medium ${activeMember === member.id ? 'text-on-primary-container' : 'text-on-surface-variant'}`}>
                   {member.role}
                 </p>
+                {member.submittedAt && (
+                  <p className={`text-[10px] mt-0.5 ${activeMember === member.id ? 'text-secondary-fixed-dim' : 'text-outline'}`}>
+                    {member.submittedAt}
+                  </p>
+                )}
               </div>
               {member.submittedAt ? (
                 <CheckCircle2 className={activeMember === member.id ? 'text-secondary-fixed-dim' : 'text-secondary'} size={18} />
@@ -135,6 +158,24 @@ export const TeamInputs: React.FC = () => {
               )}
             </button>
           ))}
+
+          {/* Tech stack summary */}
+          {submittedCount > 0 && (
+            <div className="mt-4 p-4 bg-surface-container-lowest rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 className="text-secondary" size={14} />
+                <p className="text-[10px] font-black uppercase tracking-widest text-outline">Stack Mencionado</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TECH_SUMMARY.map((t) => (
+                  <span key={t.label} className="flex items-center gap-1 px-2 py-1 bg-secondary/10 text-secondary text-[11px] font-bold rounded-lg">
+                    {t.label}
+                    <span className="text-[10px] bg-secondary text-white rounded-full w-4 h-4 flex items-center justify-center">{t.count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input area */}
@@ -170,7 +211,7 @@ export const TeamInputs: React.FC = () => {
                 onChange={(e) => handleActivityChange(current.id, e.target.value)}
                 disabled={!!current.submittedAt}
                 className="w-full bg-surface-container-low border-none rounded-xl p-5 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none disabled:opacity-60"
-                placeholder={"Escribe como si le explicaras a un amigo lo que haces...\n\nEjemplo:\nPues básicamente me la paso haciendo APIs en Go, revisando PRs del equipo y peleando con Kubernetes cuando algo truena en staging. También hago pair programming con los juniors y a veces toco la base de datos cuando hay queries lentos."}
+                placeholder={"Escribe como si le explicaras a un amigo lo que haces...\n\nEjemplo:\nPues básicamente me la paso haciendo APIs en Go, revisando PRs del equipo y peleando con Kubernetes cuando algo truena en staging."}
                 rows={8}
               />
             </div>
@@ -217,7 +258,7 @@ export const TeamInputs: React.FC = () => {
             )}
           </div>
 
-          {/* Summary sidebar */}
+          {/* Summary */}
           <div className="bg-primary-container text-white p-6 rounded-2xl shadow-lg overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 blur-3xl -mr-10 -mt-10 rounded-full" />
             <div className="relative z-10">
@@ -237,9 +278,13 @@ export const TeamInputs: React.FC = () => {
                   <p className="text-2xl font-black text-secondary-fixed-dim">{members.length - submittedCount}</p>
                 </div>
               </div>
-              {submittedCount === members.length && (
+              {submittedCount === members.length ? (
                 <p className="mt-4 text-xs text-secondary-fixed-dim font-bold">
-                  ✓ Todas las respuestas recibidas. Ve al Generator para que RH procese la vacante.
+                  ✓ Todas las respuestas recibidas. RH puede procesar la vacante.
+                </p>
+              ) : (
+                <p className="mt-4 text-xs text-on-primary-container opacity-70">
+                  Espera las respuestas de {members.length - submittedCount} miembro(s) antes de enviar a RH.
                 </p>
               )}
             </div>
@@ -249,4 +294,3 @@ export const TeamInputs: React.FC = () => {
     </div>
   );
 };
-
