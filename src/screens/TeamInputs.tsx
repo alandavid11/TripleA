@@ -16,9 +16,9 @@ const INITIAL_MEMBERS: TeamMemberInput[] = [
     name: 'Carlos Mendoza',
     role: 'Backend Engineer',
     avatar: 'carlos',
-    activities: `Me la paso haciendo APIs en Go y code reviews. Esta semana migré varios endpoints de REST a gRPC y estuve optimizando queries lentas en PostgreSQL que afectaban el dashboard de reportes.
+    activities: `I spend most of my time building APIs in Go and doing code reviews. This week I migrated several endpoints from REST to gRPC and was optimizing slow queries in PostgreSQL that were affecting the reporting dashboard.
 
-Uso Kafka para eventos entre microservicios y Kubernetes para los deployments. Los viernes hago pair programming con los juniors. El mayor dolor del equipo ahora mismo es que necesitamos a alguien que tome ownership de la migración a event-driven architecture, yo ya estoy muy saturado con los servicios de pagos.`,
+I use Kafka for events between microservices and Kubernetes for deployments. On Fridays I do pair programming with the juniors. The biggest pain point for the team right now is that we need someone to take ownership of the migration to event-driven architecture — I'm already overloaded with the payments services.`,
     submittedAt: '18 Mar 2026, 09:14',
   },
   {
@@ -26,9 +26,9 @@ Uso Kafka para eventos entre microservicios y Kubernetes para los deployments. L
     name: 'Sarah Chen',
     role: 'Full-Stack Developer',
     avatar: 'sarah',
-    activities: `Trabajo principalmente en el frontend con React/TypeScript, pero también toco el backend de Go cuando es necesario. Esta semana conecté el nuevo flujo de onboarding del producto con los endpoints del equipo y tuve que crear dos rutas nuevas en el API Gateway.
+    activities: `I mainly work on the frontend with React/TypeScript, but I also touch the Go backend when needed. This week I connected the new product onboarding flow with the team's endpoints and had to create two new routes in the API Gateway.
 
-Mi mayor reto es mantener consistencia entre los contratos de API y la UI cuando el backend evoluciona rápido. Necesitamos alguien que nos ayude con la carga de backend, especialmente en las integraciones con servicios externos.`,
+My biggest challenge is maintaining consistency between API contracts and the UI when the backend evolves quickly. We need someone to help us with the backend workload, especially with external service integrations.`,
     submittedAt: '18 Mar 2026, 10:32',
   },
   {
@@ -36,9 +36,9 @@ Mi mayor reto es mantener consistencia entre los contratos de API y la UI cuando
     name: 'Marcus Thorne',
     role: 'DevOps / SRE Engineer',
     avatar: 'marcus',
-    activities: `Mantengo toda la infraestructura en GCP con Terraform y Kubernetes. Esta semana configuré los cluster autoscalers para los nodos de producción y resolví un problema de OOM en los pods del servicio de eventos (no tenían memory limits, clásico).
+    activities: `I maintain all the infrastructure on GCP with Terraform and Kubernetes. This week I configured the cluster autoscalers for the production nodes and resolved an OOM issue in the event service pods (they had no memory limits set — classic).
 
-También mantengo los pipelines de GitHub Actions — el build de Go está tardando 28 minutos y lo quiero bajar. Trabajo mucho con Prometheus y Grafana para monitoring. El equipo necesita a alguien que entienda bien Kubernetes y que pueda autosuficientarse en infra, yo no puedo ser el único que sabe tocar el cluster.`,
+I also maintain the GitHub Actions pipelines — the Go build is taking 28 minutes and I want to bring it down. I work a lot with Prometheus and Grafana for monitoring. The team needs someone who really understands Kubernetes and can be self-sufficient with infra — I can't be the only one who knows how to manage the cluster.`,
     submittedAt: '17 Mar 2026, 16:55',
   },
   {
@@ -52,10 +52,10 @@ También mantengo los pipelines de GitHub Actions — el build de Go está tarda
 ];
 
 const PROMPTS = [
-  '¿Qué herramientas o tecnologías usas a diario?',
-  '¿Cuál es la parte más retadora de tu trabajo actual?',
-  '¿Qué tipo de persona crees que haría un buen fit en el equipo?',
-  '¿Qué actividades ocupan la mayor parte de tu semana?',
+  'What tools or technologies do you use on a daily basis?',
+  'What is the most challenging part of your current job?',
+  'What kind of person do you think would be a good fit for the team?',
+  'What activities take up most of your week?',
 ];
 
 const TECH_SUMMARY = [
@@ -82,7 +82,7 @@ export const TeamInputs: React.FC = () => {
   const handleSubmit = (id: string) => {
     setMembers((prev) =>
       prev.map((m) =>
-        m.id === id ? { ...m, submittedAt: new Date().toLocaleString('es-MX') } : m
+        m.id === id ? { ...m, submittedAt: new Date().toLocaleString('en-US') } : m
       )
     );
   };
@@ -101,16 +101,16 @@ export const TeamInputs: React.FC = () => {
         <div className="flex justify-between items-end">
           <div>
             <h2 className="font-headline text-4xl font-extrabold text-primary-container tracking-tight">
-              Actividades del Equipo
+              Team Activities
             </h2>
             <p className="text-on-surface-variant mt-1">
-              Cada integrante describe sus actividades diarias para generar un perfil real de la vacante.
+              Each team member describes their daily activities to generate an accurate vacancy profile.
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
             <CheckCircle2 className="text-secondary" size={14} />
             <span className="text-xs font-bold text-on-surface-variant">
-              {submittedCount}/{members.length} enviados
+              {submittedCount}/{members.length} submitted
             </span>
           </div>
         </div>
@@ -120,7 +120,7 @@ export const TeamInputs: React.FC = () => {
         {/* Member list */}
         <div className="col-span-12 lg:col-span-4 space-y-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-outline ml-2 mb-2">
-            Miembros del Equipo
+            Team Members
           </p>
           {members.map((member) => (
             <button
@@ -164,7 +164,7 @@ export const TeamInputs: React.FC = () => {
             <div className="mt-4 p-4 bg-surface-container-lowest rounded-xl shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 className="text-secondary" size={14} />
-                <p className="text-[10px] font-black uppercase tracking-widest text-outline">Stack Mencionado</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-outline">Mentioned Stack</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {TECH_SUMMARY.map((t) => (
@@ -194,7 +194,7 @@ export const TeamInputs: React.FC = () => {
               </div>
               {current.submittedAt && (
                 <span className="ml-auto px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded-full uppercase">
-                  Enviado · {current.submittedAt}
+                  Submitted · {current.submittedAt}
                 </span>
               )}
             </div>
@@ -203,7 +203,7 @@ export const TeamInputs: React.FC = () => {
               <div className="flex items-center gap-2 mb-3">
                 <MessageCircle className="text-secondary" size={16} />
                 <label className="text-[10px] font-black uppercase tracking-widest text-outline">
-                  ¿Qué haces en tu día a día? Cuéntanos informal
+                  What do you do day-to-day? Tell us informally
                 </label>
               </div>
               <textarea
@@ -211,7 +211,7 @@ export const TeamInputs: React.FC = () => {
                 onChange={(e) => handleActivityChange(current.id, e.target.value)}
                 disabled={!!current.submittedAt}
                 className="w-full bg-surface-container-low border-none rounded-xl p-5 text-sm focus:ring-2 focus:ring-secondary transition-all resize-none disabled:opacity-60"
-                placeholder={"Escribe como si le explicaras a un amigo lo que haces...\n\nEjemplo:\nPues básicamente me la paso haciendo APIs en Go, revisando PRs del equipo y peleando con Kubernetes cuando algo truena en staging."}
+                placeholder={"Write as if you were explaining to a friend what you do...\n\nExample:\nBasically I spend most of my time building APIs in Go, reviewing PRs from the team, and fighting with Kubernetes when something breaks in staging."}
                 rows={8}
               />
             </div>
@@ -221,7 +221,7 @@ export const TeamInputs: React.FC = () => {
               <div className="p-4 bg-surface-container-low rounded-xl mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Lightbulb className="text-amber-500" size={14} />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-outline">Ideas para escribir</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-outline">Writing Ideas</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {PROMPTS.map((prompt, i) => (
@@ -253,7 +253,7 @@ export const TeamInputs: React.FC = () => {
                 }`}
               >
                 <Send size={16} />
-                Enviar mis actividades
+                Submit my activities
               </button>
             )}
           </div>
@@ -265,26 +265,26 @@ export const TeamInputs: React.FC = () => {
               <div className="flex items-center gap-2 mb-4">
                 <UserCircle className="text-secondary" size={20} />
                 <h4 className="font-headline text-sm font-bold uppercase tracking-wider">
-                  Resumen de respuestas recibidas
+                  Summary of Responses Received
                 </h4>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-                  <p className="text-[10px] uppercase font-bold text-on-primary-container mb-1">Enviados</p>
+                  <p className="text-[10px] uppercase font-bold text-on-primary-container mb-1">Submitted</p>
                   <p className="text-2xl font-black">{submittedCount}</p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-                  <p className="text-[10px] uppercase font-bold text-on-primary-container mb-1">Pendientes</p>
+                  <p className="text-[10px] uppercase font-bold text-on-primary-container mb-1">Pending</p>
                   <p className="text-2xl font-black text-secondary-fixed-dim">{members.length - submittedCount}</p>
                 </div>
               </div>
               {submittedCount === members.length ? (
                 <p className="mt-4 text-xs text-secondary-fixed-dim font-bold">
-                  ✓ Todas las respuestas recibidas. RH puede procesar la vacante.
+                  ✓ All responses received. HR can proceed with the vacancy.
                 </p>
               ) : (
                 <p className="mt-4 text-xs text-on-primary-container opacity-70">
-                  Espera las respuestas de {members.length - submittedCount} miembro(s) antes de enviar a RH.
+                  Waiting for responses from {members.length - submittedCount} member(s) before sending to HR.
                 </p>
               )}
             </div>

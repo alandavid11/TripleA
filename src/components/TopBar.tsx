@@ -23,7 +23,7 @@ export const TopBar: React.FC<TopBarProps> = ({ activeRole, onRoleChange }) => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" size={18} />
           <input
             className="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-lg focus:ring-2 focus:ring-primary-container text-sm"
-            placeholder="Buscar vacantes, candidatos o actividades..."
+            placeholder="Search vacancies, candidates, or activities..."
             type="text"
           />
         </div>
