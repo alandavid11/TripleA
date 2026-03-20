@@ -55,6 +55,7 @@ export interface CvCandidate {
   feedback: string;
   crossMatchVacancy?: string;
   crossMatchScore?: number;
+  expectedSalary?: number;
 }
 
 export interface Vacancy {
@@ -66,4 +67,5 @@ export interface Vacancy {
   applicants: number;
   approved: number;
   rejected: number;
+  budget?: number;
 }

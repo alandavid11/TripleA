@@ -28,6 +28,7 @@ import {
   Briefcase,
   Clock,
   Shuffle,
+  DollarSign,
 } from 'lucide-react';
 import { UserRole, InterviewQuestion, UploadedFile, CvCandidate, Vacancy } from '../types';
 
@@ -38,12 +39,15 @@ interface VacanciesProps {
 // ── MOCK VACANCIES LIST ──
 
 const MOCK_VACANCIES: Vacancy[] = [
-  { id: 'v1', title: 'Senior Backend Engineer', team: 'Platform Engineering', status: 'screening', createdAt: '12 Mar 2026', applicants: 6, approved: 3, rejected: 3 },
-  { id: 'v2', title: 'Frontend Lead', team: 'Product & Growth', status: 'generated', createdAt: '8 Mar 2026', applicants: 0, approved: 0, rejected: 0 },
-  { id: 'v3', title: 'Data Engineer', team: 'Data & AI Systems', status: 'draft', createdAt: '15 Mar 2026', applicants: 0, approved: 0, rejected: 0 },
-  { id: 'v4', title: 'DevOps / SRE Engineer', team: 'Infrastructure & SRE', status: 'interviewing', createdAt: '1 Mar 2026', applicants: 8, approved: 2, rejected: 6 },
-  { id: 'v5', title: 'QA Automation Engineer', team: 'Platform Engineering', status: 'completed', createdAt: '20 Feb 2026', applicants: 5, approved: 1, rejected: 4 },
+  { id: 'v1', title: 'Senior Backend Engineer', team: 'Platform Engineering', status: 'screening', createdAt: '12 Mar 2026', applicants: 6, approved: 3, rejected: 3, budget: 4500 },
+  { id: 'v2', title: 'Frontend Lead', team: 'Product & Growth', status: 'generated', createdAt: '8 Mar 2026', applicants: 0, approved: 0, rejected: 0, budget: 4000 },
+  { id: 'v3', title: 'Data Engineer', team: 'Data & AI Systems', status: 'draft', createdAt: '15 Mar 2026', applicants: 0, approved: 0, rejected: 0, budget: 5000 },
+  { id: 'v4', title: 'DevOps / SRE Engineer', team: 'Infrastructure & SRE', status: 'interviewing', createdAt: '1 Mar 2026', applicants: 8, approved: 2, rejected: 6, budget: 5500 },
+  { id: 'v5', title: 'QA Automation Engineer', team: 'Platform Engineering', status: 'completed', createdAt: '20 Feb 2026', applicants: 5, approved: 1, rejected: 4, budget: 3000 },
 ];
+
+const fmtSalary = (n: number) =>
+  `$${n.toLocaleString('en-US')} USD/mes`;
 
 const VACANCY_STATUS_CONFIG: Record<Vacancy['status'], { label: string; color: string; bg: string }> = {
   draft: { label: 'Borrador', color: 'text-outline', bg: 'bg-surface-container-high' },
@@ -223,12 +227,12 @@ const MOCK_FILES: UploadedFile[] = [
 const MOCK_BENEFITS = `- Trabajo 100% remoto con horario flexible\n- Seguro de gastos médicos mayores y menores\n- Vales de despensa y fondo de ahorro\n- Presupuesto anual de capacitación ($2,000 USD)\n- 20 días de vacaciones desde el primer año\n- Bonos trimestrales por desempeño`;
 
 const MOCK_CV_CANDIDATES: CvCandidate[] = [
-  { id: 'cv1', name: 'Diana Torres', matchScore: 91, status: 'approved', currentRole: 'Senior Backend Engineer @ MercadoLibre', experience: '7 años en sistemas distribuidos', strengths: ['Go y microservicios en producción', 'Kubernetes a escala', 'Experiencia con Kafka y event-driven', 'Liderazgo técnico de equipos de 6+'], gaps: [], feedback: '' },
-  { id: 'cv2', name: 'Andrés Salazar', matchScore: 84, status: 'approved', currentRole: 'Backend Lead @ Rappi', experience: '6 años en backend de alto tráfico', strengths: ['PostgreSQL avanzado y sharding', 'CI/CD con GitHub Actions', 'gRPC y protobuf', 'Mentoría de juniors'], gaps: ['Poca experiencia con Terraform'], feedback: '' },
-  { id: 'cv3', name: 'Valentina Rojas', matchScore: 76, status: 'approved', currentRole: 'Software Engineer III @ Nubank', experience: '5 años en fintech con Go', strengths: ['Go en producción 4 años', 'Event sourcing y CQRS', 'Cultura de testing fuerte'], gaps: ['Sin experiencia directa con Kubernetes', 'No ha liderado equipos formalmente'], feedback: '' },
-  { id: 'cv4', name: 'Roberto Vega', matchScore: 38, status: 'rejected', currentRole: 'PHP Developer @ Agencia Web', experience: '4 años en desarrollo web', strengths: ['Buena actitud y ganas de aprender', 'Experiencia con Laravel'], gaps: ['Sin experiencia en sistemas distribuidos', 'No conoce Kubernetes ni contenedores', 'Experiencia limitada a monolitos PHP'], feedback: 'El candidato tiene buena actitud y capacidad de aprendizaje, pero su experiencia técnica está centrada en monolitos PHP y no cuenta con las bases necesarias en sistemas distribuidos, orquestación de contenedores ni message brokers que el puesto requiere.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 68 },
-  { id: 'cv5', name: 'Laura Méndez', matchScore: 45, status: 'rejected', currentRole: 'Backend Developer @ Startup', experience: '3 años en backend con Go', strengths: ['Conocimiento básico de Go', 'Familiaridad con PostgreSQL'], gaps: ['CI/CD limitado a deploys manuales', 'Sin experiencia con event-driven architecture', 'No ha trabajado a escala'], feedback: 'La candidata demuestra conocimiento en backend con Go, pero su experiencia en CI/CD se limita a scripts manuales y no ha trabajado con arquitecturas event-driven ni a la escala requerida.' },
-  { id: 'cv6', name: 'Pedro Castillo', matchScore: 22, status: 'rejected', currentRole: 'Junior Frontend Developer', experience: '1.5 años en frontend con React', strengths: ['Motivación para transicionar a backend'], gaps: ['Sin experiencia en backend', 'No conoce Go ni lenguajes de sistemas', 'Sin conocimiento de infraestructura cloud'], feedback: 'El candidato es desarrollador frontend junior sin experiencia en backend ni infraestructura cloud. El perfil no se alinea con los requisitos del puesto.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 74 },
+  { id: 'cv1', name: 'Diana Torres', matchScore: 91, status: 'approved', currentRole: 'Senior Backend Engineer @ MercadoLibre', experience: '7 años en sistemas distribuidos', strengths: ['Go y microservicios en producción', 'Kubernetes a escala', 'Experiencia con Kafka y event-driven', 'Liderazgo técnico de equipos de 6+'], gaps: [], feedback: '', expectedSalary: 5200 },
+  { id: 'cv2', name: 'Andrés Salazar', matchScore: 84, status: 'approved', currentRole: 'Backend Lead @ Rappi', experience: '6 años en backend de alto tráfico', strengths: ['PostgreSQL avanzado y sharding', 'CI/CD con GitHub Actions', 'gRPC y protobuf', 'Mentoría de juniors'], gaps: ['Poca experiencia con Terraform'], feedback: '', expectedSalary: 4200 },
+  { id: 'cv3', name: 'Valentina Rojas', matchScore: 76, status: 'approved', currentRole: 'Software Engineer III @ Nubank', experience: '5 años en fintech con Go', strengths: ['Go en producción 4 años', 'Event sourcing y CQRS', 'Cultura de testing fuerte'], gaps: ['Sin experiencia directa con Kubernetes', 'No ha liderado equipos formalmente'], feedback: '', expectedSalary: 3800 },
+  { id: 'cv4', name: 'Roberto Vega', matchScore: 38, status: 'rejected', currentRole: 'PHP Developer @ Agencia Web', experience: '4 años en desarrollo web', strengths: ['Buena actitud y ganas de aprender', 'Experiencia con Laravel'], gaps: ['Sin experiencia en sistemas distribuidos', 'No conoce Kubernetes ni contenedores', 'Experiencia limitada a monolitos PHP'], feedback: 'El candidato tiene buena actitud y capacidad de aprendizaje, pero su experiencia técnica está centrada en monolitos PHP y no cuenta con las bases necesarias en sistemas distribuidos, orquestación de contenedores ni message brokers que el puesto requiere.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 68, expectedSalary: 2500 },
+  { id: 'cv5', name: 'Laura Méndez', matchScore: 45, status: 'rejected', currentRole: 'Backend Developer @ Startup', experience: '3 años en backend con Go', strengths: ['Conocimiento básico de Go', 'Familiaridad con PostgreSQL'], gaps: ['CI/CD limitado a deploys manuales', 'Sin experiencia con event-driven architecture', 'No ha trabajado a escala'], feedback: 'La candidata demuestra conocimiento en backend con Go, pero su experiencia en CI/CD se limita a scripts manuales y no ha trabajado con arquitecturas event-driven ni a la escala requerida.', expectedSalary: 2800 },
+  { id: 'cv6', name: 'Pedro Castillo', matchScore: 22, status: 'rejected', currentRole: 'Junior Frontend Developer', experience: '1.5 años en frontend con React', strengths: ['Motivación para transicionar a backend'], gaps: ['Sin experiencia en backend', 'No conoce Go ni lenguajes de sistemas', 'Sin conocimiento de infraestructura cloud'], feedback: 'El candidato es desarrollador frontend junior sin experiencia en backend ni infraestructura cloud. El perfil no se alinea con los requisitos del puesto.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 74, expectedSalary: 1800 },
 ];
 
 const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
@@ -306,6 +310,7 @@ interface SreCandidateData {
   hrScore: number;
   strengths: string[];
   gaps: string[];
+  expectedSalary: number;
 }
 
 const HM_SRE_CANDIDATE: SreCandidateData = {
@@ -316,6 +321,7 @@ const HM_SRE_CANDIDATE: SreCandidateData = {
   hrScore: 78,
   strengths: ['Kubernetes en producción a escala', 'Terraform y GCP expert', 'SLOs y error budgets', 'Incident response liderado'],
   gaps: ['Poca experiencia con Go específicamente', 'Sin experiencia con Kafka'],
+  expectedSalary: 5200,
 };
 
 const HM_SRE_QUESTIONS: InterviewQuestion[] = [
@@ -661,6 +667,11 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="text-xs text-on-surface-variant">{v.team}</span>
                         <span className="text-xs text-outline flex items-center gap-1"><Clock size={10} />{v.createdAt}</span>
+                        {v.budget && (
+                          <span className="text-xs font-bold text-secondary flex items-center gap-1">
+                            <DollarSign size={10} />Budget: {fmtSalary(v.budget)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -708,7 +719,14 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
         <div className="flex justify-between items-end">
           <div>
             <h2 className="font-headline text-3xl font-extrabold text-primary-container tracking-tight">{vacancy?.title}</h2>
-            <p className="text-on-surface-variant mt-1 text-sm">{vacancy?.team}</p>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-on-surface-variant text-sm">{vacancy?.team}</p>
+              {vacancy?.budget && (
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-secondary/10 text-secondary text-xs font-black rounded-lg">
+                  <DollarSign size={12} />Budget máx: {fmtSalary(vacancy.budget)}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {activeRole === 'hr' && (
@@ -943,7 +961,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                     <h3 className="font-headline text-xl font-bold text-on-surface">{HM_SRE_CANDIDATE.name}</h3>
                     <p className="text-sm text-on-surface-variant">{HM_SRE_CANDIDATE.currentRole}</p>
                     <p className="text-xs text-outline mt-0.5">{HM_SRE_CANDIDATE.experience}</p>
-                    <div className="flex gap-4 mt-3">
+                    <div className="flex gap-3 mt-3 flex-wrap">
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-container/10 rounded-lg">
                         <span className="text-[10px] font-bold text-outline uppercase">CV Match</span>
                         <span className="font-headline font-black text-primary-container text-lg">{HM_SRE_CANDIDATE.cvScore}%</span>
@@ -952,6 +970,18 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                         <span className="text-[10px] font-bold text-outline uppercase">RH Score</span>
                         <span className="font-headline font-black text-secondary text-lg">{HM_SRE_CANDIDATE.hrScore}%</span>
                       </div>
+                      {(() => {
+                        const v4Budget = MOCK_VACANCIES.find((v) => v.id === 'v4')?.budget;
+                        const ob = v4Budget && HM_SRE_CANDIDATE.expectedSalary > v4Budget;
+                        return (
+                          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${ob ? 'bg-amber-500/10' : 'bg-secondary/10'}`}>
+                            <DollarSign size={12} className={ob ? 'text-amber-500' : 'text-secondary'} />
+                            <span className="text-[10px] font-bold text-outline uppercase">Salario esperado</span>
+                            <span className={`font-headline font-black text-base ${ob ? 'text-amber-600' : 'text-secondary'}`}>{fmtSalary(HM_SRE_CANDIDATE.expectedSalary)}</span>
+                            {ob && <span className="text-[9px] text-amber-600 font-bold">↑ sobre budget</span>}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1418,7 +1448,10 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
               <div className="mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-secondary mb-3 ml-1">Candidatos Aprobados — Listos para Entrevista</p>
                 <div className="space-y-3">
-                  {approvedCandidates.map((c) => (
+                  {approvedCandidates.map((c) => {
+                    const overBudget = vacancy?.budget && c.expectedSalary ? c.expectedSalary > vacancy.budget : false;
+                    const salaryDiff = vacancy?.budget && c.expectedSalary ? c.expectedSalary - vacancy.budget : 0;
+                    return (
                     <div key={c.id} className="bg-surface-container-lowest rounded-2xl shadow-sm border-l-4 border-secondary overflow-hidden transition-all">
                       <div className="p-5 flex items-center justify-between cursor-pointer" onClick={() => setExpandedCandidate(expandedCandidate === c.id ? null : c.id)}>
                         <div className="flex items-center gap-4">
@@ -1426,6 +1459,24 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                           <div>
                             <p className="text-sm font-bold text-on-surface">{c.name}</p>
                             <p className="text-xs text-on-surface-variant">{c.currentRole} · {c.experience}</p>
+                            {c.expectedSalary && (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <DollarSign size={10} className={overBudget ? 'text-amber-500' : 'text-secondary'} />
+                                <span className={`text-[11px] font-bold ${overBudget ? 'text-amber-600' : 'text-secondary'}`}>
+                                  {fmtSalary(c.expectedSalary)}
+                                </span>
+                                {overBudget && (
+                                  <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-600 text-[9px] font-black uppercase rounded border border-amber-400/30">
+                                    +{fmtSalary(salaryDiff)} sobre budget
+                                  </span>
+                                )}
+                                {!overBudget && vacancy?.budget && (
+                                  <span className="px-1.5 py-0.5 bg-secondary/10 text-secondary text-[9px] font-black uppercase rounded">
+                                    Dentro del budget
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -1438,6 +1489,14 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                       </div>
                       {expandedCandidate === c.id && (
                         <div className="px-5 pb-5 pt-0 border-t border-outline-variant/10">
+                          {overBudget && (
+                            <div className="mt-4 flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-400/30 rounded-xl">
+                              <AlertTriangle className="text-amber-500 flex-shrink-0" size={14} />
+                              <p className="text-xs text-amber-700">
+                                El salario esperado de <strong>{fmtSalary(c.expectedSalary!)}</strong> supera el budget de la vacante (<strong>{fmtSalary(vacancy!.budget!)}</strong>) por <strong>{fmtSalary(salaryDiff)}</strong>. Considera negociar o ajustar el presupuesto.
+                              </p>
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-4 mt-4">
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-outline mb-2">Fortalezas</p>
@@ -1456,7 +1515,8 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1488,6 +1548,11 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                               )}
                             </div>
                             <p className="text-xs text-on-surface-variant">{c.currentRole} · {c.experience}</p>
+                            {c.expectedSalary && (
+                              <span className="text-[11px] font-bold text-outline flex items-center gap-1 mt-0.5">
+                                <DollarSign size={10} />{fmtSalary(c.expectedSalary)}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -1598,7 +1663,10 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold">{c.name}</p>
-                    <p className={`text-[10px] ${selectedCandidate === c.id ? 'text-white/70' : 'text-outline'}`}>CV: {c.matchScore}%</p>
+                    <p className={`text-[10px] ${selectedCandidate === c.id ? 'text-white/70' : 'text-outline'}`}>
+                      CV: {c.matchScore}%
+                      {c.expectedSalary ? ` · ${fmtSalary(c.expectedSalary)}` : ''}
+                    </p>
                   </div>
                 </button>
               ))}
@@ -1611,7 +1679,18 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                 <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center"><MessageSquare className="text-white" size={20} /></div>
                 <div>
                   <h3 className="font-headline text-2xl font-bold text-on-surface">Entrevista: {interviewCandidate.name}</h3>
-                  <p className="text-sm text-on-surface-variant">{interviewCandidate.currentRole} · CV Score: {interviewCandidate.matchScore}%</p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="text-sm text-on-surface-variant">{interviewCandidate.currentRole} · CV Score: {interviewCandidate.matchScore}%</p>
+                    {interviewCandidate.expectedSalary && (() => {
+                      const ob = vacancy?.budget && interviewCandidate.expectedSalary > vacancy.budget;
+                      return (
+                        <span className={`flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold ${ob ? 'bg-amber-500/10 text-amber-600 border border-amber-400/30' : 'bg-secondary/10 text-secondary'}`}>
+                          <DollarSign size={11} />{fmtSalary(interviewCandidate.expectedSalary)}
+                          {ob && <span className="ml-1 text-[10px]">↑ sobre budget</span>}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 
