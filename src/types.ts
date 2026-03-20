@@ -54,6 +54,7 @@ export interface CvCandidate {
   gaps: string[];
   feedback: string;
   crossMatchVacancy?: string;
+  crossMatchScore?: number;
 }
 
 export interface Vacancy {

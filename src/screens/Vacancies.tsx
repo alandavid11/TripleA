@@ -226,9 +226,9 @@ const MOCK_CV_CANDIDATES: CvCandidate[] = [
   { id: 'cv1', name: 'Diana Torres', matchScore: 91, status: 'approved', currentRole: 'Senior Backend Engineer @ MercadoLibre', experience: '7 años en sistemas distribuidos', strengths: ['Go y microservicios en producción', 'Kubernetes a escala', 'Experiencia con Kafka y event-driven', 'Liderazgo técnico de equipos de 6+'], gaps: [], feedback: '' },
   { id: 'cv2', name: 'Andrés Salazar', matchScore: 84, status: 'approved', currentRole: 'Backend Lead @ Rappi', experience: '6 años en backend de alto tráfico', strengths: ['PostgreSQL avanzado y sharding', 'CI/CD con GitHub Actions', 'gRPC y protobuf', 'Mentoría de juniors'], gaps: ['Poca experiencia con Terraform'], feedback: '' },
   { id: 'cv3', name: 'Valentina Rojas', matchScore: 76, status: 'approved', currentRole: 'Software Engineer III @ Nubank', experience: '5 años en fintech con Go', strengths: ['Go en producción 4 años', 'Event sourcing y CQRS', 'Cultura de testing fuerte'], gaps: ['Sin experiencia directa con Kubernetes', 'No ha liderado equipos formalmente'], feedback: '' },
-  { id: 'cv4', name: 'Roberto Vega', matchScore: 38, status: 'rejected', currentRole: 'PHP Developer @ Agencia Web', experience: '4 años en desarrollo web', strengths: ['Buena actitud y ganas de aprender', 'Experiencia con Laravel'], gaps: ['Sin experiencia en sistemas distribuidos', 'No conoce Kubernetes ni contenedores', 'Experiencia limitada a monolitos PHP'], feedback: 'El candidato tiene buena actitud y capacidad de aprendizaje, pero su experiencia técnica está centrada en monolitos PHP y no cuenta con las bases necesarias en sistemas distribuidos, orquestación de contenedores ni message brokers que el puesto requiere.', crossMatchVacancy: 'Frontend Lead' },
+  { id: 'cv4', name: 'Roberto Vega', matchScore: 38, status: 'rejected', currentRole: 'PHP Developer @ Agencia Web', experience: '4 años en desarrollo web', strengths: ['Buena actitud y ganas de aprender', 'Experiencia con Laravel'], gaps: ['Sin experiencia en sistemas distribuidos', 'No conoce Kubernetes ni contenedores', 'Experiencia limitada a monolitos PHP'], feedback: 'El candidato tiene buena actitud y capacidad de aprendizaje, pero su experiencia técnica está centrada en monolitos PHP y no cuenta con las bases necesarias en sistemas distribuidos, orquestación de contenedores ni message brokers que el puesto requiere.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 68 },
   { id: 'cv5', name: 'Laura Méndez', matchScore: 45, status: 'rejected', currentRole: 'Backend Developer @ Startup', experience: '3 años en backend con Go', strengths: ['Conocimiento básico de Go', 'Familiaridad con PostgreSQL'], gaps: ['CI/CD limitado a deploys manuales', 'Sin experiencia con event-driven architecture', 'No ha trabajado a escala'], feedback: 'La candidata demuestra conocimiento en backend con Go, pero su experiencia en CI/CD se limita a scripts manuales y no ha trabajado con arquitecturas event-driven ni a la escala requerida.' },
-  { id: 'cv6', name: 'Pedro Castillo', matchScore: 22, status: 'rejected', currentRole: 'Junior Frontend Developer', experience: '1.5 años en frontend con React', strengths: ['Motivación para transicionar a backend'], gaps: ['Sin experiencia en backend', 'No conoce Go ni lenguajes de sistemas', 'Sin conocimiento de infraestructura cloud'], feedback: 'El candidato es desarrollador frontend junior sin experiencia en backend ni infraestructura cloud. El perfil no se alinea con los requisitos del puesto.', crossMatchVacancy: 'Frontend Lead' },
+  { id: 'cv6', name: 'Pedro Castillo', matchScore: 22, status: 'rejected', currentRole: 'Junior Frontend Developer', experience: '1.5 años en frontend con React', strengths: ['Motivación para transicionar a backend'], gaps: ['Sin experiencia en backend', 'No conoce Go ni lenguajes de sistemas', 'Sin conocimiento de infraestructura cloud'], feedback: 'El candidato es desarrollador frontend junior sin experiencia en backend ni infraestructura cloud. El perfil no se alinea con los requisitos del puesto.', crossMatchVacancy: 'Frontend Lead', crossMatchScore: 74 },
 ];
 
 const MOCK_CANDIDATE_ANSWERS: Record<string, string> = {
@@ -393,6 +393,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   // Step 3: Screening
   const [cvCandidates, setCvCandidates] = useState<CvCandidate[]>([]);
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null);
+  const [transferredCandidates, setTransferredCandidates] = useState<Set<string>>(new Set());
 
   // Step 4: HR Interview
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
@@ -434,6 +435,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setIsHmEvaluating(false);
     setHmSubmitted(false);
     setExpandedCandidate(null);
+    setTransferredCandidates(new Set());
     setIsGenerating(false);
     setIsEvaluating(false);
     setQuestions(MOCK_BASE_QUESTIONS);
@@ -1462,17 +1464,26 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-error mb-3 ml-1">Candidatos Rechazados — Feedback de IA</p>
                 <div className="space-y-3">
-                  {rejectedCandidates.map((c) => (
-                    <div key={c.id} className="bg-surface-container-lowest rounded-2xl shadow-sm border-l-4 border-error/40 overflow-hidden">
+                  {rejectedCandidates.map((c) => {
+                    const isTransferred = transferredCandidates.has(c.id);
+                    return (
+                    <div key={c.id} className={`bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden ${isTransferred ? 'border-l-4 border-blue-400' : 'border-l-4 border-error/40'}`}>
                       <div className="p-5 flex items-center justify-between cursor-pointer" onClick={() => setExpandedCandidate(expandedCandidate === c.id ? null : c.id)}>
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-on-error-container text-sm font-black">{c.name.split(' ').map((n) => n[0]).join('')}</div>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-black ${isTransferred ? 'bg-blue-100 text-blue-700' : 'bg-error-container text-on-error-container'}`}>
+                            {c.name.split(' ').map((n) => n[0]).join('')}
+                          </div>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="text-sm font-bold text-on-surface">{c.name}</p>
-                              {c.crossMatchVacancy && (
+                              {c.crossMatchVacancy && !isTransferred && (
                                 <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-600 text-[10px] font-bold rounded-full border border-blue-500/20">
-                                  <Shuffle size={10} />Fit: {c.crossMatchVacancy}
+                                  <Shuffle size={10} />Fit: {c.crossMatchVacancy} · {c.crossMatchScore}%
+                                </span>
+                              )}
+                              {isTransferred && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/15 text-blue-700 text-[10px] font-black rounded-full border border-blue-500/30">
+                                  <CheckCircle2 size={10} />Transferido → {c.crossMatchVacancy}
                                 </span>
                               )}
                             </div>
@@ -1481,8 +1492,8 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="text-2xl font-headline font-black text-error">{c.matchScore}%</p>
-                            <p className="text-[10px] font-bold text-error uppercase">No match</p>
+                            <p className={`text-2xl font-headline font-black ${isTransferred ? 'text-blue-600' : 'text-error'}`}>{c.matchScore}%</p>
+                            <p className={`text-[10px] font-bold uppercase ${isTransferred ? 'text-blue-500' : 'text-error'}`}>No match</p>
                           </div>
                           <ChevronRight className={`text-outline transition-transform ${expandedCandidate === c.id ? 'rotate-90' : ''}`} size={18} />
                         </div>
@@ -1490,11 +1501,61 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                       {expandedCandidate === c.id && (
                         <div className="px-5 pb-5 pt-0 border-t border-outline-variant/10">
                           {c.crossMatchVacancy && (
-                            <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl flex items-center gap-3">
-                              <Shuffle className="text-blue-600 flex-shrink-0" size={16} />
-                              <div>
-                                <p className="text-xs font-bold text-blue-700">Posible match para otra vacante</p>
-                                <p className="text-xs text-blue-600">La IA detectó que este candidato podría encajar en la posición de <span className="font-bold">{c.crossMatchVacancy}</span>.</p>
+                            <div className={`mt-4 p-4 rounded-xl border ${isTransferred ? 'bg-blue-500/5 border-blue-400/40' : 'bg-blue-500/5 border-blue-500/20'}`}>
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <Shuffle className="text-blue-600 flex-shrink-0 mt-0.5" size={16} />
+                                  <div>
+                                    <p className="text-xs font-bold text-blue-700 mb-0.5">
+                                      {isTransferred ? `Transferido a: ${c.crossMatchVacancy}` : `Cross-match detectado por IA`}
+                                    </p>
+                                    <p className="text-xs text-blue-600">
+                                      {isTransferred
+                                        ? `El candidato fue agregado al pool de screening de ${c.crossMatchVacancy}.`
+                                        : `Este candidato podría encajar en la posición de `}
+                                      {!isTransferred && <strong>{c.crossMatchVacancy}</strong>}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 flex-shrink-0">
+                                  {/* Cross-match score ring */}
+                                  <div className="flex flex-col items-center">
+                                    <div className="relative w-14 h-14">
+                                      <svg className="w-full h-full transform -rotate-90">
+                                        <circle className="text-blue-100" cx="28" cy="28" fill="transparent" r="22" stroke="currentColor" strokeWidth="5" />
+                                        <circle
+                                          className="text-blue-500"
+                                          cx="28" cy="28" fill="transparent" r="22"
+                                          stroke="currentColor"
+                                          strokeDasharray="138"
+                                          strokeDashoffset={138 - (138 * (c.crossMatchScore ?? 0)) / 100}
+                                          strokeWidth="5"
+                                          strokeLinecap="round"
+                                        />
+                                      </svg>
+                                      <span className="absolute inset-0 flex items-center justify-center font-headline font-black text-sm text-blue-600">
+                                        {c.crossMatchScore}%
+                                      </span>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-blue-500 uppercase mt-0.5">Match</p>
+                                  </div>
+                                  {/* Transfer button */}
+                                  {!isTransferred ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTransferredCandidates((prev) => new Set([...prev, c.id]));
+                                      }}
+                                      className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+                                    >
+                                      <Send size={13} />Transferir
+                                    </button>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-100 text-blue-700 text-xs font-black uppercase tracking-wider rounded-xl">
+                                      <CheckCircle2 size={13} />Transferido
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -1511,7 +1572,8 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>
