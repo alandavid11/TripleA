@@ -17,11 +17,10 @@ interface SidebarProps {
 
 const allNavItems: { id: Screen; label: string; icon: React.ElementType; roles: UserRole[] }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['hr', 'hiring_manager'] },
-  { id: 'team-inputs', label: 'Team Inputs', icon: ClipboardEdit, roles: ['hiring_manager'] },
   { id: 'vacancies', label: 'Vacancies', icon: Briefcase, roles: ['hr', 'hiring_manager'] },
   { id: 'match', label: 'Match', icon: Users, roles: ['hr', 'hiring_manager'] },
   { id: 'settings', label: 'Settings', icon: Settings, roles: ['hr', 'hiring_manager'] },
-  { id: 'team-member', label: 'Mi Feedback', icon: ClipboardEdit, roles: ['team_member'] },
+  { id: 'team-member', label: 'Mis Solicitudes', icon: ClipboardEdit, roles: ['team_member'] },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, activeRole }) => {

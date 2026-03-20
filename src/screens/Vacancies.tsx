@@ -477,7 +477,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newFiles: UploadedFile[] = Array.from(files).map((f) => ({
+    const newFiles: UploadedFile[] = Array.from<File>(files).map((f) => ({
       name: f.name,
       size: `${(f.size / 1024).toFixed(1)} KB`,
       type: f.name.endsWith('.pdf') ? 'pdf' : f.name.endsWith('.doc') || f.name.endsWith('.docx') ? 'doc' : 'other',
@@ -1065,6 +1065,90 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
               <TrendingUp className="text-secondary mx-auto mb-3" size={32} />
               <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Proceso archivado</h3>
               <p className="text-sm text-on-surface-variant">El proceso de contratación para esta vacante ha concluido. Puedes revisar el historial en el reporte final.</p>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── HM: TEAM INPUTS PANEL (visible inside any vacancy) ── */}
+      {activeRole === 'hiring_manager' && selectedVacancy && (() => {
+        const vacancy = MOCK_VACANCIES.find((v) => v.id === selectedVacancy)!;
+        const HM_TEAM_INPUTS: Record<string, { name: string; role: string; avatar: string; status: 'submitted' | 'pending'; text: string; submittedAt: string }[]> = {
+          v1: [
+            { name: 'Carlos Mendoza', role: 'Backend Engineer', avatar: 'carlos', status: 'submitted', submittedAt: '18 Mar, 09:14', text: 'Me la paso haciendo APIs en Go y code reviews. Esta semana migré endpoints de REST a gRPC y estuve optimizando queries lentas en PostgreSQL. Necesitamos a alguien que tome ownership de la migración a event-driven architecture.' },
+            { name: 'Sarah Chen', role: 'Full-Stack Developer', avatar: 'sarah', status: 'submitted', submittedAt: '18 Mar, 10:32', text: 'Trabajo en React/TypeScript y toco backend en Go cuando necesito. Falta alguien de backend puro que nos ayude con la carga.' },
+            { name: 'Marcus Thorne', role: 'DevOps Engineer', avatar: 'marcus', status: 'submitted', submittedAt: '17 Mar, 16:55', text: 'Mantengo infra en GCP con Terraform y Kubernetes. Necesitamos a alguien que entienda K8s y pueda autosuficientarse sin ser mi cuello de botella.' },
+            { name: 'Ana Gutiérrez', role: 'Frontend Engineer', avatar: 'ana', status: 'pending', submittedAt: '', text: '' },
+          ],
+          v2: [
+            { name: 'Ana Gutiérrez', role: 'Frontend Engineer', avatar: 'ana', status: 'submitted', submittedAt: '8 Mar, 11:20', text: 'Implemento features con React y TypeScript, muy alineada con Diseño. Necesitamos un Frontend Lead que defina el Design System y establezca estándares de calidad.' },
+            { name: 'Sarah Chen', role: 'Full-Stack Developer', avatar: 'sarah', status: 'submitted', submittedAt: '8 Mar, 14:05', text: 'Trabajo en el frontend y backend. Nos haría falta alguien con visión de producto y que sea mentor para el equipo de frontend.' },
+            { name: 'Carlos Mendoza', role: 'Backend Engineer', avatar: 'carlos', status: 'pending', submittedAt: '', text: '' },
+            { name: 'Marcus Thorne', role: 'DevOps Engineer', avatar: 'marcus', status: 'pending', submittedAt: '', text: '' },
+          ],
+          v3: [
+            { name: 'Carlos Mendoza', role: 'Backend Engineer', avatar: 'carlos', status: 'pending', submittedAt: '', text: '' },
+            { name: 'Sarah Chen', role: 'Full-Stack Developer', avatar: 'sarah', status: 'pending', submittedAt: '', text: '' },
+            { name: 'Marcus Thorne', role: 'DevOps Engineer', avatar: 'marcus', status: 'pending', submittedAt: '', text: '' },
+          ],
+          v4: [
+            { name: 'Marcus Thorne', role: 'DevOps / SRE Engineer', avatar: 'marcus', status: 'submitted', submittedAt: '1 Mar, 09:00', text: 'Soy el único que toca el cluster de producción. Necesitamos a alguien con Kubernetes operativo real, Terraform y experiencia en incident response. Bonus si conoce Istio.' },
+            { name: 'Carlos Mendoza', role: 'Backend Engineer', avatar: 'carlos', status: 'submitted', submittedAt: '1 Mar, 10:15', text: 'Trabajaría muy de cerca con esta persona para los deployments de los servicios de pagos. Necesita saber Kubernetes y entender Go deployments.' },
+            { name: 'Sarah Chen', role: 'Full-Stack Developer', avatar: 'sarah', status: 'submitted', submittedAt: '1 Mar, 11:30', text: 'Que sea buena comunicando cuando hay cambios de infra que nos impactan en el frontend. Que monitoree activamente y no espere a que todo truene.' },
+          ],
+          v5: [
+            { name: 'Carlos Mendoza', role: 'Backend Engineer', avatar: 'carlos', status: 'submitted', submittedAt: '20 Feb, 08:45', text: 'Necesitamos QA que entienda APIs y pueda escribir pruebas de integración. Que no sea solo "clickeador manual".' },
+            { name: 'Ana Gutiérrez', role: 'Frontend Engineer', avatar: 'ana', status: 'submitted', submittedAt: '20 Feb, 09:30', text: 'Alguien que haga pruebas E2E de los flujos de producto con Cypress o Playwright. Que trabaje cerca de diseño también.' },
+            { name: 'Sarah Chen', role: 'Full-Stack Developer', avatar: 'sarah', status: 'submitted', submittedAt: '20 Feb, 10:00', text: 'Con experiencia en Playwright o Cypress. Que pueda hacer pruebas de regresión automáticas en el pipeline de CI.' },
+            { name: 'Marcus Thorne', role: 'DevOps Engineer', avatar: 'marcus', status: 'submitted', submittedAt: '20 Feb, 10:45', text: 'Que sepa integrar los tests en GitHub Actions. Que entienda los pipelines y pueda agregar gates de calidad al CI/CD.' },
+          ],
+        };
+        const members = HM_TEAM_INPUTS[vacancy.id] ?? [];
+        if (members.length === 0) return null;
+        const submittedCount = members.filter((m) => m.status === 'submitted').length;
+        return (
+          <div className="mt-8 bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-outline-variant/20">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-surface-container-high rounded-lg flex items-center justify-center"><Users className="text-outline" size={16} /></div>
+                <div>
+                  <h4 className="text-sm font-bold text-on-surface">Team Inputs para esta vacante</h4>
+                  <p className="text-[10px] text-outline">{submittedCount}/{members.length} miembros han enviado su feedback</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-24 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                  <div className="h-full bg-secondary rounded-full transition-all" style={{ width: `${(submittedCount / members.length) * 100}%` }} />
+                </div>
+                <span className="text-[11px] font-bold text-secondary">{Math.round((submittedCount / members.length) * 100)}%</span>
+              </div>
+            </div>
+            <div className="divide-y divide-outline-variant/10">
+              {members.map((m) => (
+                <div key={m.name} className="flex items-start gap-4 p-5">
+                  <img src={`https://picsum.photos/seed/${m.avatar}/100/100`} alt={m.name} className="w-9 h-9 rounded-full object-cover border-2 border-surface-container-high flex-shrink-0 mt-0.5" referrerPolicy="no-referrer" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-bold text-on-surface">{m.name}</p>
+                      <span className="text-[10px] text-outline">{m.role}</span>
+                      {m.status === 'submitted' && <span className="ml-auto text-[10px] text-outline">{m.submittedAt}</span>}
+                    </div>
+                    {m.status === 'submitted' ? (
+                      <p className="text-xs text-on-surface-variant leading-relaxed">{m.text}</p>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="text-amber-400" size={12} />
+                        <span className="text-xs text-amber-600 font-medium">Pendiente de enviar</span>
+                      </div>
+                    )}
+                  </div>
+                  {m.status === 'submitted' ? (
+                    <CheckCircle2 className="text-secondary flex-shrink-0 mt-0.5" size={16} />
+                  ) : (
+                    <Clock className="text-amber-400 flex-shrink-0 mt-0.5" size={16} />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         );
