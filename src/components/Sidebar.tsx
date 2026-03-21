@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
 
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 flex flex-col py-6 z-50 border-r border-outline-variant/30 bg-surface-container-lowest">
-      {/* Logo */}
+      {/* Logo + app name */}
       <div className="px-5 mb-8">
         <img
           src={`${import.meta.env.BASE_URL}micoach-logo.png?v=2`}
@@ -47,6 +47,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
           className="h-10 w-auto object-contain"
           style={{ background: 'transparent' }}
         />
+        <p className="font-headline text-lg font-bold text-on-surface mt-3 tracking-tight leading-tight">
+          Talent Aiquisition
+        </p>
       </div>
 
       {/* Role badge */}
@@ -96,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
             Plataforma
           </p>
           <p className="text-sm font-bold leading-tight">
-            Hiring Intelligence
+            Talent Aiquisition
           </p>
           <p className="text-[10px] text-white/60 mt-1">powered by miCoach</p>
         </div>

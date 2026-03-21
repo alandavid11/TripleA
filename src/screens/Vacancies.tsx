@@ -2848,7 +2848,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                     <p>Le solicitamos confirmar su aceptación dentro de los próximos <strong>5 días hábiles</strong>. En caso de tener dudas o requerir información adicional, no dude en contactarnos.</p>
                     <p>Estamos emocionados de que se una a nuestro equipo y confiamos en que su perfil aportará un gran valor a la organización.</p>
                     <p className="mt-4">Atentamente,</p>
-                    <p className="font-bold">Equipo de Recursos Humanos<br /><span className="text-on-surface-variant font-normal">miCoach Hiring Intelligence</span></p>
+                    <p className="font-bold">Equipo de Recursos Humanos<br /><span className="text-on-surface-variant font-normal">Talent Aiquisition · powered by miCoach</span></p>
                   </div>
 
                   <div className="flex gap-3">
@@ -2875,7 +2875,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
       {rejectModalOpen && rejectModalCandidate && (() => {
         const vacancy = vacancies.find((v) => v.id === selectedVacancy);
         const hmFeedback = rejectModalCandidate.hmFeedback ?? rejectModalCandidate.feedback ?? '';
-        const emailBody = `Estimado/a ${rejectModalCandidate.name},\n\nAgradecemos sinceramente su interés en la posición de ${vacancy?.title ?? 'la vacante'} en el equipo de ${vacancy?.team ?? 'nuestra organización'}, así como el tiempo y dedicación invertidos a lo largo de nuestro proceso de selección.\n\nLuego de una evaluación exhaustiva de todos los candidatos, hemos tomado la difícil decisión de continuar con otro perfil cuyas competencias se alinean de manera más cercana con los requerimientos del rol en este momento.\n\n${hmFeedback ? `Feedback de nuestro equipo técnico:\n"${hmFeedback}"\n\n` : ''}Le animamos a seguir desarrollando su perfil profesional. Su postulación ha sido valorada y quedará en nuestros registros para futuras oportunidades.\n\nLe deseamos mucho éxito en su búsqueda laboral y en sus próximos proyectos.\n\nAtentamente,\nEquipo de Recursos Humanos\nmiCoach Hiring Intelligence`;
+        const emailBody = `Estimado/a ${rejectModalCandidate.name},\n\nAgradecemos sinceramente su interés en la posición de ${vacancy?.title ?? 'la vacante'} en el equipo de ${vacancy?.team ?? 'nuestra organización'}, así como el tiempo y dedicación invertidos a lo largo de nuestro proceso de selección.\n\nLuego de una evaluación exhaustiva de todos los candidatos, hemos tomado la difícil decisión de continuar con otro perfil cuyas competencias se alinean de manera más cercana con los requerimientos del rol en este momento.\n\n${hmFeedback ? `Feedback de nuestro equipo técnico:\n"${hmFeedback}"\n\n` : ''}Le animamos a seguir desarrollando su perfil profesional. Su postulación ha sido valorada y quedará en nuestros registros para futuras oportunidades.\n\nLe deseamos mucho éxito en su búsqueda laboral y en sus próximos proyectos.\n\nAtentamente,\nEquipo de Recursos Humanos\nTalent Aiquisition · powered by miCoach`;
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
