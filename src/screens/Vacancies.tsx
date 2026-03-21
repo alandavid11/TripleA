@@ -314,6 +314,14 @@ const MOCK_HM_ANSWERS: Record<string, Record<string, string>> = {
   },
 };
 
+// ── MOCK HM BASE QUESTIONS (advanced technical, stage: hm) ──
+const MOCK_HM_BASE_QUESTIONS: InterviewQuestion[] = [
+  { id: 'hmb1', category: 'Diseño de Sistemas', question: 'Diseña un sistema de procesamiento de pagos distribuido que maneje 100K TPS con garantías de exactly-once. ¿Qué componentes usarías y cómo evitas duplicados bajo network partitions?', expectedAnswer: 'Idempotency keys en cada transacción, saga pattern para transacciones distribuidas, Kafka con exactly-once semantics, base de datos con CRDT o lock optimista, circuit breakers y compensating transactions.', candidateAnswer: '', questionType: 'base', interviewStage: 'hm' },
+  { id: 'hmb2', category: 'Rendimiento & Escalabilidad', question: 'Tu servicio Go en producción tiene un p99 de 800ms cuando debería ser <100ms. El profiler muestra que el 60% del tiempo está en accesos a base de datos. Walk me through el proceso completo de diagnóstico y optimización.', expectedAnswer: 'EXPLAIN ANALYZE de queries lentas, índices faltantes, N+1 queries, connection pool exhaustion, query cache, read replicas para queries de lectura, denormalización estratégica, caching en Redis para hot paths.', candidateAnswer: '', questionType: 'base', interviewStage: 'hm' },
+  { id: 'hmb3', category: 'Arquitectura Avanzada', question: 'Tienes un monolito de 8 años con 500K líneas de código. El equipo quiere migrarlo a microservicios. ¿Cuál es tu estrategia y en qué orden descompones los bounded contexts?', expectedAnswer: 'Strangler fig pattern, identificar bounded contexts con DDD, extraer primero los dominios más independientes y de menor riesgo, mantener ambos sistemas con API gateway, usar feature flags para tráfico gradual, evitar el distributed monolith.', candidateAnswer: '', questionType: 'base', interviewStage: 'hm' },
+  { id: 'hmb4', category: 'Confiabilidad & SRE', question: 'Eres el lead técnico y a las 2am cae el servicio de autenticación. 80K usuarios no pueden entrar. ¿Cuáles son tus primeros 5 minutos y cómo manejas la comunicación simultánea mientras diagnosticas?', expectedAnswer: 'Revisar dashboards/métricas, identificar si es un deploy reciente (rollback rápido), comunicar en slack interno cada 5 min aunque no haya resolución, status page para usuarios, activar runbook de incident response, escalar si es necesario.', candidateAnswer: '', questionType: 'base', interviewStage: 'hm' },
+];
+
 // ── HM DIRECT VIEW MOCK DATA (per vacancy) ──
 
 const HM_GENERATED_JDS: Record<string, { title: string; summary: string; skills: string[]; responsibilities: string[] }> = {
@@ -447,6 +455,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const [questions, setQuestions] = useState<InterviewQuestion[]>(MOCK_BASE_QUESTIONS);
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [hrDecision, setHrDecision] = useState<'none' | 'continue' | 'reject'>('none');
 
   // Step 5: HM Technical Interview (HR wizard flow)
@@ -553,6 +562,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
 
   const approvedCandidates = cvCandidates.filter((c) => c.status === 'approved');
   const rejectedCandidates = cvCandidates.filter((c) => c.status === 'rejected');
+  const pendingCandidates = cvCandidates.filter((c) => c.status === 'pending');
   const interviewCandidate = cvCandidates.find((c) => c.id === selectedCandidate);
   const answeredAll = questions.every((q) => q.candidateAnswer.trim().length > 0);
   const canGenerate = activeRole === 'hr' && (jdFiles.length > 0 || companyBenefits.trim().length > 0);
@@ -580,8 +590,9 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setIsEvaluating(false);
     setIsProcessingCVs(false);
     setProcessingStatus('');
-    setQuestions(MOCK_BASE_QUESTIONS);
-    setMockMode(false);
+    setQuestions([]);
+    setIsGeneratingQuestions(false);
+    // Note: mockMode is intentionally NOT reset here so it persists through navigation
   };
 
   const toggleMockMode = () => {
@@ -645,6 +656,21 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setHmRealScore(null);
     setHmRealJustification('');
     setHmRealQuestions([]);
+
+    if (mockMode) {
+      // Mock mode: combine base HM questions + personalized per candidate
+      const baseQs = MOCK_HM_BASE_QUESTIONS.map((q) => ({ ...q, candidateAnswer: '' }));
+      const personalizedQs = (MOCK_HM_QUESTIONS[candidateId] ?? []).map((q) => ({
+        ...q,
+        id: `hmp_${q.id}`,
+        questionType: 'personalized' as const,
+        interviewStage: 'hm' as const,
+        candidateAnswer: '',
+      }));
+      setHmRealQuestions([...baseQs, ...personalizedQs]);
+      return;
+    }
+
     if (!selectedVacancy) return;
     setIsLoadingHmQ(true);
     try {
@@ -663,8 +689,27 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   };
 
   const handleHmRealEvaluate = async () => {
-    if (!selectedVacancy || !selectedHmCandidateId) return;
+    if (!selectedHmCandidateId) return;
     setIsHmRealEvaluating(true);
+
+    if (mockMode) {
+      setTimeout(() => {
+        const answeredCount = hmRealQuestions.filter((q) => q.candidateAnswer.trim().length > 0).length;
+        const score = Math.min(100, Math.round((answeredCount / Math.max(hmRealQuestions.length, 1)) * 80 + Math.random() * 14 + 3));
+        const justification = score >= 75
+          ? 'El candidato demuestra sólido dominio técnico avanzado y experiencia práctica en sistemas distribuidos. Sus respuestas evidencian capacidad de liderazgo técnico y pensamiento sistemático ante incidentes. Perfil muy recomendado para el rol.'
+          : 'El candidato muestra conocimiento técnico adecuado pero sus respuestas carecen de la profundidad y especificidad esperada para un rol senior. Se recomienda evaluar si tiene el nivel de seniority requerido antes de continuar el proceso.';
+        setHmRealScore(score);
+        setHmRealJustification(justification);
+        setCvCandidates((prev) =>
+          prev.map((c) => c.id === selectedHmCandidateId ? { ...c, hmScore: score, hmFeedback: justification } : c)
+        );
+        setIsHmRealEvaluating(false);
+      }, 1800);
+      return;
+    }
+
+    if (!selectedVacancy) { setIsHmRealEvaluating(false); return; }
     try {
       const answered = hmRealQuestions.map((q) => ({ questionId: q.id, answer: q.candidateAnswer }));
       const result = await evaluateInterview(selectedVacancy, selectedHmCandidateId, answered, 'hm');
@@ -688,15 +733,20 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
   const handleHmDecision = async (decision: 'accepted' | 'rejected') => {
     if (!selectedHmCandidateId || hmRealScore === null) return;
     setIsSavingHmDecision(true);
+    // Optimistic update
+    setCvCandidates((prev) =>
+      prev.map((c) =>
+        c.id === selectedHmCandidateId
+          ? { ...c, hmDecision: decision, hmScore: hmRealScore, hmFeedback: hmRealJustification }
+          : c
+      )
+    );
+    if (mockMode) {
+      setTimeout(() => setIsSavingHmDecision(false), 600);
+      return;
+    }
     try {
       await updateCandidateHmDecision(selectedHmCandidateId, decision, hmRealScore, hmRealJustification);
-      setCvCandidates((prev) =>
-        prev.map((c) =>
-          c.id === selectedHmCandidateId
-            ? { ...c, hmDecision: decision, hmScore: hmRealScore, hmFeedback: hmRealJustification }
-            : c
-        )
-      );
     } catch (err) {
       console.error('Error saving HM decision:', err);
     } finally {
@@ -734,12 +784,14 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
 
   const handleMakeOffer = async () => {
     if (!selectedVacancy) return;
-    try {
-      await updateVacancyStatus(selectedVacancy, 'completed');
-      setVacancies((prev) => prev.map((v) => v.id === selectedVacancy ? { ...v, status: 'completed' } : v));
-      setOfferSent(true);
-    } catch (err) {
-      console.error('Error completing vacancy:', err);
+    setVacancies((prev) => prev.map((v) => v.id === selectedVacancy ? { ...v, status: 'completed' } : v));
+    setOfferSent(true);
+    if (!mockMode) {
+      try {
+        await updateVacancyStatus(selectedVacancy, 'completed');
+      } catch (err) {
+        console.error('Error completing vacancy:', err);
+      }
     }
   };
 
@@ -859,6 +911,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setHrDecision('none');
     setHmMatchScore(null);
     setHmQuestions([]);
+    setQuestions([]);
     setCurrentStep('interview');
 
     if (mockMode) {
@@ -880,19 +933,29 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     }
 
     if (!selectedVacancy) return;
+    // Only load from cache — do NOT auto-generate; HR triggers generation explicitly
     try {
-      // Generate questions if not yet created (cached in DB)
-      await generateQuestions(selectedVacancy);
       const qs = await fetchQuestions(selectedVacancy, id, 'hr');
       if (qs.length > 0) {
         setQuestions(qs);
-      } else {
-        setQuestions(MOCK_BASE_QUESTIONS);
       }
+    } catch (err) {
+      console.error('Error loading questions from cache:', err);
+    }
+  };
+
+  const handleGenerateInterviewQuestions = async () => {
+    if (!selectedVacancy || !selectedCandidate) return;
+    setIsGeneratingQuestions(true);
+    try {
+      await generateQuestions(selectedVacancy);
+      const qs = await fetchQuestions(selectedVacancy, selectedCandidate, 'hr');
+      setQuestions(qs.length > 0 ? qs : []);
       fetchVacancies().then(setVacancies).catch(() => {});
     } catch (err) {
-      console.error('Error loading questions:', err);
-      setQuestions(MOCK_BASE_QUESTIONS);
+      console.error('Error generating interview questions:', err);
+    } finally {
+      setIsGeneratingQuestions(false);
     }
   };
 
@@ -986,6 +1049,11 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
 
       // Restore persisted benefits / raw text if available
       if (v.jdBenefits) setCompanyBenefits(v.jdBenefits);
+
+      // In mock mode, restore candidates for vacancies that have them
+      if (mockMode && (v.status === 'interviewing' || v.status === 'screening')) {
+        setCvCandidates(MOCK_CV_CANDIDATES);
+      }
     }
     setSelectedVacancy(id);
   };
@@ -2165,8 +2233,9 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                     <p className="text-sm text-on-surface-variant">Se recibieron {cvCandidates.length} CVs. La IA los evaluó automáticamente.</p>
                   </div>
                 </div>
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-3 items-center flex-wrap">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-lg"><UserCheck className="text-secondary" size={14} /><span className="text-xs font-bold text-secondary">{approvedCandidates.length} Aprobados</span></div>
+                  {pendingCandidates.length > 0 && <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 rounded-lg"><Clock className="text-amber-500" size={14} /><span className="text-xs font-bold text-amber-600">{pendingCandidates.length} En revisión</span></div>}
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-error/10 rounded-lg"><UserX className="text-error" size={14} /><span className="text-xs font-bold text-error">{rejectedCandidates.length} Rechazados</span></div>
                   {!mockMode && (
                     <div className="flex flex-col items-end gap-2">
@@ -2301,6 +2370,52 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                 </div>
               </div>
 
+              {/* Pending — manual review by HR */}
+              {pendingCandidates.length > 0 && (
+                <div className="mb-6">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-3 ml-1">En Revisión — Requieren Decisión Manual de RH</p>
+                  <div className="space-y-3">
+                    {pendingCandidates.map((c) => (
+                      <div key={c.id} className="bg-amber-50/60 rounded-2xl shadow-sm border-l-4 border-amber-400 overflow-hidden">
+                        <div className="p-5 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-sm font-black">{c.name.split(' ').map((n) => n[0]).join('')}</div>
+                            <div>
+                              <p className="text-sm font-bold text-on-surface">{c.name}</p>
+                              <p className="text-xs text-on-surface-variant">{c.currentRole} · {c.experience}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full border border-amber-300">
+                                  <BarChart3 size={10} />{c.matchScore}% match — Borderline
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleApproveCandidateStatus(c.id, 'approved')}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white text-xs font-bold rounded-xl hover:opacity-90 transition-all"
+                            >
+                              <UserCheck size={14} />Aprobar
+                            </button>
+                            <button
+                              onClick={() => handleApproveCandidateStatus(c.id, 'rejected')}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-error/10 text-error text-xs font-bold rounded-xl border border-error/30 hover:bg-error/20 transition-all"
+                            >
+                              <UserX size={14} />Rechazar
+                            </button>
+                          </div>
+                        </div>
+                        {c.feedback && (
+                          <div className="px-5 pb-4 pt-0">
+                            <p className="text-xs text-on-surface-variant italic border-t border-amber-200 pt-3">{c.feedback}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Rejected */}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-error mb-3 ml-1">Candidatos Rechazados — Feedback de IA</p>
@@ -2309,6 +2424,11 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                     <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                     <span>{transferError}</span>
                     <button onClick={() => setTransferError(null)} className="ml-auto"><X size={12} /></button>
+                  </div>
+                )}
+                {rejectedCandidates.length === 0 && (
+                  <div className="p-6 border border-dashed border-outline-variant/30 rounded-xl text-center">
+                    <p className="text-xs text-on-surface-variant">Ningún candidato fue descartado — todos pasaron el umbral de aprobación automática.</p>
                   </div>
                 )}
                 <div className="space-y-3">
@@ -2528,24 +2648,59 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                 </div>
               </div>
 
-              {/* Question set summary */}
-              <div className="flex items-center gap-4 mb-6 px-1">
-                <div className="flex items-center gap-1.5">
-                  <ClipboardList className="text-outline" size={13} />
-                  <p className="text-[11px] text-outline font-bold uppercase tracking-widest">
-                    {questions.filter((q) => q.questionType === 'base' || q.id.startsWith('b_')).length} actitud & cultura
-                  </p>
+              {/* Question set: generate CTA or summary + list */}
+              {questions.length === 0 && !mockMode ? (
+                <div className="flex flex-col items-center gap-5 py-12 px-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-sm mb-6">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #04A28F22, #0057F022)' }}>
+                    <ClipboardList className="text-primary-container" size={28} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-headline text-lg font-bold text-on-surface mb-1">Preguntas de entrevista RH</p>
+                    <p className="text-sm text-on-surface-variant max-w-sm">
+                      Genera el set personalizado de preguntas para <strong>{interviewCandidate.name}</strong> basado en su CV y la descripción del puesto.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleGenerateInterviewQuestions}
+                    disabled={isGeneratingQuestions}
+                    className="flex items-center gap-3 px-8 py-3.5 rounded-xl font-bold text-sm text-white shadow-lg hover:opacity-90 transition-all disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg, #04A28F 0%, #0057F0 100%)' }}
+                  >
+                    {isGeneratingQuestions ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        Generando preguntas con IA…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        Generar preguntas con IA
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-outline">Actitud & cultura · Preguntas personalizadas para el candidato</p>
                 </div>
-                <span className="text-outline">+</span>
-                <div className="flex items-center gap-1.5">
-                  <Shuffle className="text-teal-500" size={13} />
-                  <p className="text-[11px] text-teal-600 font-bold uppercase tracking-widest">
-                    {questions.filter((q) => q.questionType === 'personalized' || (!q.id.startsWith('b_') && q.questionType !== 'base')).length} personalizadas para {interviewCandidate.name}
-                  </p>
-                </div>
-                <span className="text-outline">=</span>
-                <p className="text-[11px] font-black text-on-surface uppercase tracking-widest">{questions.length} preguntas RH</p>
-              </div>
+              ) : questions.length > 0 && (
+                <>
+                  <div className="flex items-center gap-4 mb-6 px-1">
+                    <div className="flex items-center gap-1.5">
+                      <ClipboardList className="text-outline" size={13} />
+                      <p className="text-[11px] text-outline font-bold uppercase tracking-widest">
+                        {questions.filter((q) => q.questionType === 'base' || q.id.startsWith('b_')).length} actitud & cultura
+                      </p>
+                    </div>
+                    <span className="text-outline">+</span>
+                    <div className="flex items-center gap-1.5">
+                      <Shuffle className="text-teal-500" size={13} />
+                      <p className="text-[11px] text-teal-600 font-bold uppercase tracking-widest">
+                        {questions.filter((q) => q.questionType === 'personalized' || (!q.id.startsWith('b_') && q.questionType !== 'base')).length} personalizadas para {interviewCandidate.name}
+                      </p>
+                    </div>
+                    <span className="text-outline">=</span>
+                    <p className="text-[11px] font-black text-on-surface uppercase tracking-widest">{questions.length} preguntas RH</p>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-4">
                 {questions.map((q, i) => {
@@ -2579,11 +2734,13 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                 })}
               </div>
 
-              <div className="flex justify-center mt-8">
-                <button onClick={handleEvaluate} disabled={!answeredAll || isEvaluating} className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${answeredAll && !isEvaluating ? 'bg-secondary text-white hover:opacity-90 cursor-pointer' : 'bg-surface-container-high text-outline cursor-not-allowed'}`}>
-                  {isEvaluating ? (<><Loader2 className="animate-spin" size={20} />Evaluando con IA...</>) : (<><BarChart3 size={20} />Evaluar Match con IA</>)}
-                </button>
-              </div>
+              {questions.length > 0 && (
+                <div className="flex justify-center mt-8">
+                  <button onClick={handleEvaluate} disabled={!answeredAll || isEvaluating} className={`flex items-center gap-3 px-10 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg ${answeredAll && !isEvaluating ? 'bg-secondary text-white hover:opacity-90 cursor-pointer' : 'bg-surface-container-high text-outline cursor-not-allowed'}`}>
+                    {isEvaluating ? (<><Loader2 className="animate-spin" size={20} />Evaluando con IA...</>) : (<><BarChart3 size={20} />Evaluar Match con IA</>)}
+                  </button>
+                </div>
+              )}
 
               {/* Match result */}
               {matchScore !== null && (
