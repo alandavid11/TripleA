@@ -35,6 +35,8 @@ export interface InterviewQuestion {
   expectedAnswer: string;
   candidateAnswer: string;
   tailoredFor?: string;
+  questionType?: 'base' | 'personalized';
+  interviewStage?: 'hr' | 'hm';
 }
 
 export interface UploadedFile {
@@ -43,11 +45,18 @@ export interface UploadedFile {
   type: 'pdf' | 'doc' | 'other';
 }
 
+export interface GeneratedJD {
+  summary: string;
+  requiredSkills: string[];
+  responsibilities: string[];
+  benefits: string[];
+}
+
 export interface CvCandidate {
   id: string;
   name: string;
   matchScore: number;
-  status: 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected';
   currentRole: string;
   experience: string;
   strengths: string[];
@@ -56,6 +65,11 @@ export interface CvCandidate {
   crossMatchVacancy?: string;
   crossMatchScore?: number;
   expectedSalary?: number;
+  cvText?: string;
+  cvFilePath?: string;
+  hmDecision?: 'accepted' | 'rejected';
+  hmScore?: number;
+  hmFeedback?: string;
 }
 
 export interface Vacancy {
@@ -68,4 +82,8 @@ export interface Vacancy {
   approved: number;
   rejected: number;
   budget?: number;
+  jdRawText?: string;
+  jdBenefits?: string;
+  jdGenerated?: GeneratedJD;
+  teamSummary?: string;
 }

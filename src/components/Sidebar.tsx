@@ -5,7 +5,6 @@ import {
   Briefcase,
   Users,
   Settings,
-  Hexagon,
 } from 'lucide-react';
 import { Screen, UserRole } from '../types';
 
@@ -17,58 +16,91 @@ interface SidebarProps {
 
 const allNavItems: { id: Screen; label: string; icon: React.ElementType; roles: UserRole[] }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['hr', 'hiring_manager'] },
-  { id: 'vacancies', label: 'Vacancies', icon: Briefcase, roles: ['hr', 'hiring_manager'] },
+  { id: 'vacancies', label: 'Vacantes', icon: Briefcase, roles: ['hr', 'hiring_manager'] },
   { id: 'match', label: 'Match', icon: Users, roles: ['hr', 'hiring_manager'] },
-  { id: 'settings', label: 'Settings', icon: Settings, roles: ['hr', 'hiring_manager'] },
-  { id: 'team-member', label: 'My Requests', icon: ClipboardEdit, roles: ['team_member'] },
+  { id: 'settings', label: 'Configuración', icon: Settings, roles: ['hr', 'hiring_manager'] },
+  { id: 'team-member', label: 'Mis Solicitudes', icon: ClipboardEdit, roles: ['team_member'] },
 ];
+
+const roleLabels: Record<UserRole, string> = {
+  hr: 'Recursos Humanos',
+  hiring_manager: 'Hiring Manager',
+  team_member: 'Team Member',
+};
+
+const roleDotColor: Record<UserRole, string> = {
+  hr: 'bg-brand-teal',
+  hiring_manager: 'bg-brand-gold',
+  team_member: 'bg-brand-blue',
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, activeRole }) => {
   const navItems = allNavItems.filter((item) => item.roles.includes(activeRole));
 
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col py-6 z-50">
-      <div className="px-6 mb-10 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
-          <Hexagon className="text-secondary-fixed-dim fill-secondary-fixed-dim" size={24} />
-        </div>
-        <div>
-          <h1 className="text-xl font-black text-slate-900 leading-none font-headline">Talent AI-Quisition</h1>
-          <p className="text-[10px] uppercase tracking-widest text-on-primary-container font-bold mt-1">Hiring Intelligence</p>
+    <aside className="h-screen w-64 fixed left-0 top-0 flex flex-col py-6 z-50 border-r border-outline-variant/30 bg-surface-container-lowest">
+      {/* Logo */}
+      <div className="px-5 mb-8">
+        <img
+          src="/micoach-logo.png?v=2"
+          alt="miCoach"
+          className="h-10 w-auto object-contain"
+          style={{ background: 'transparent' }}
+        />
+      </div>
+
+      {/* Role badge */}
+      <div className="px-5 mb-6">
+        <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded-lg">
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${roleDotColor[activeRole]}`} />
+          <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider truncate">
+            {roleLabels[activeRole]}
+          </span>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onScreenChange(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeScreen === item.id
-                ? 'text-primary-container font-bold border-r-4 border-primary-container bg-white/50'
-                : 'text-slate-500 font-medium hover:text-slate-900 hover:bg-white/30'
-            }`}
-          >
-            <item.icon size={20} />
-            <span className="font-headline text-sm">{item.label}</span>
-          </button>
-        ))}
+      {/* Nav */}
+      <nav className="flex-1 px-3 space-y-1">
+        {navItems.map((item) => {
+          const isActive = activeScreen === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onScreenChange(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-headline text-sm font-semibold ${
+                isActive
+                  ? 'bg-brand-teal/10 text-brand-teal border border-brand-teal/20'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+              }`}
+            >
+              <item.icon
+                size={18}
+                className={isActive ? 'text-brand-teal' : 'text-outline'}
+              />
+              {item.label}
+              {isActive && (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-teal" />
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="px-6 mt-auto">
-        <div className="p-4 bg-primary-container rounded-xl text-white">
-          <p className="text-xs text-on-primary-container font-semibold mb-2">
-            {activeRole === 'hr' ? 'Active Role' : 'Active Role'}
+      {/* Bottom: powered by */}
+      <div className="px-5 mt-auto">
+        <div
+          className="rounded-xl p-4 text-white"
+          style={{ background: 'linear-gradient(135deg, #04A28F 0%, #0057F0 100%)' }}
+        >
+          <p className="text-[10px] text-white/70 font-semibold uppercase tracking-widest mb-1">
+            Plataforma
           </p>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : activeRole === 'hiring_manager' ? 'bg-amber-400' : 'bg-blue-400'} shadow-[0_0_8px_rgba(0,106,97,0.8)]`} />
-            <span className="text-sm font-medium">
-              {activeRole === 'hr' ? 'Human Resources' : activeRole === 'hiring_manager' ? 'Hiring Manager' : 'Team Member'}
-            </span>
-          </div>
+          <p className="text-sm font-bold leading-tight">
+            Hiring Intelligence
+          </p>
+          <p className="text-[10px] text-white/60 mt-1">powered by miCoach</p>
         </div>
       </div>
     </aside>
   );
 };
-
