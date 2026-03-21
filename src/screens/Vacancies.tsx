@@ -322,6 +322,13 @@ const MOCK_HM_BASE_QUESTIONS: InterviewQuestion[] = [
   { id: 'hmb4', category: 'Confiabilidad & SRE', question: 'Eres el lead técnico y a las 2am cae el servicio de autenticación. 80K usuarios no pueden entrar. ¿Cuáles son tus primeros 5 minutos y cómo manejas la comunicación simultánea mientras diagnosticas?', expectedAnswer: 'Revisar dashboards/métricas, identificar si es un deploy reciente (rollback rápido), comunicar en slack interno cada 5 min aunque no haya resolución, status page para usuarios, activar runbook de incident response, escalar si es necesario.', candidateAnswer: '', questionType: 'base', interviewStage: 'hm' },
 ];
 
+const MOCK_HM_BASE_ANSWERS: Record<string, string> = {
+  hmb1: 'Usaría Kafka con exactly-once semantics habilitado y un idempotency key por transacción almacenado en Redis con TTL de 24h. Para el saga pattern, cada servicio publica su evento de éxito o fallo, y un orquestador central ejecuta las compensating transactions. Bajo network partitions, los productores reintentan con backoff exponencial y los consumidores verifican el idempotency key antes de procesar. Los circuit breakers cortan el flujo si hay más del 5% de errores en 60 segundos.',
+  hmb2: 'Con pprof veo que el 60% está en DB: ejecuto EXPLAIN ANALYZE en las queries más frecuentes. Si hay N+1 queries, los combino con JOINs o batch loading. Si hay índices faltantes, los creo con CREATE INDEX CONCURRENTLY. Reviso el connection pool: si está saturado, aumento el pool size o agrego una capa de PgBouncer. Para hot paths, agrego caching en Redis con TTL de 30 segundos. Si el problema es en queries de reporting, muevo esas a una read replica dedicada. Objetivo: bajar p99 de 800ms a menos de 100ms en iteraciones medibles.',
+  hmb3: 'Aplico strangler fig pattern: primero mapeo los bounded contexts con DDD para identificar los dominios más independientes. Empiezo por los que tienen menos dependencias bidireccionales, como notificaciones o reportes. Pongo un API gateway enfrente del monolito desde el día 1 para rutear tráfico gradualmente. Uso feature flags para mover el 5%, 20%, 50%, 100% del tráfico a cada microservicio nuevo. El error más común es crear un distributed monolith: cada servicio debe ser autónomo, con su propia base de datos. Evito los joins cross-servicio y uso eventos para sincronizar datos eventualmente.',
+  hmb4: 'En los primeros 2 minutos: reviso el dashboard de autenticación en Grafana, veo si hay un deploy reciente de ese servicio o sus dependencias, y si lo hay, rollback inmediato. Si no hay deploy reciente, reviso los logs de los últimos 15 minutos buscando connection refused o JWT validation errors. Verifico si el servicio de base de datos de usuarios está respondiendo. Paralelamente comunico en el canal de incident: "P0 activo - auth caída - investigando - próximo update en 5 min". Actualizo cada 5 minutos aunque no tenga resolución. Si el rollback no resuelve en 10 minutos, escalo a más personas del equipo.',
+};
+
 // ── HM DIRECT VIEW MOCK DATA (per vacancy) ──
 
 const HM_GENERATED_JDS: Record<string, { title: string; summary: string; skills: string[]; responsibilities: string[] }> = {
@@ -599,6 +606,7 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     const next = !mockMode;
     setMockMode(next);
     if (next) {
+      // Inject mock vacancies and base JD content
       setVacancies(MOCK_VACANCIES);
       setJdFiles(MOCK_FILES);
       setCompanyBenefits(MOCK_BENEFITS);
@@ -613,7 +621,10 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
         benefits: MOCK_GENERATED_JD.benefits,
       });
       setCvCandidates(MOCK_CV_CANDIDATES);
-      // Pre-load merged interview questions for cv1 (base filtered + personalized)
+      setCurrentStep('screening');
+      // Pre-select vacancy v1 and candidate cv1 so the demo is fully navigable
+      setSelectedVacancy('v1');
+      // Pre-load merged interview questions for cv1 with answers
       const excludedIds = EXCLUDED_BASE_BY_CANDIDATE['cv1'] ?? [];
       const filteredBase = MOCK_BASE_QUESTIONS.filter((q) => !excludedIds.includes(q.id));
       const personalized = MOCK_PERSONALIZED_QUESTIONS['cv1'] ?? [];
@@ -658,14 +669,18 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     setHmRealQuestions([]);
 
     if (mockMode) {
-      // Mock mode: combine base HM questions + personalized per candidate
-      const baseQs = MOCK_HM_BASE_QUESTIONS.map((q) => ({ ...q, candidateAnswer: '' }));
+      // Mock mode: combine base HM questions + personalized per candidate, with pre-filled answers
+      const hmPersonalizedAnswers = MOCK_HM_ANSWERS[candidateId] ?? {};
+      const baseQs = MOCK_HM_BASE_QUESTIONS.map((q) => ({
+        ...q,
+        candidateAnswer: MOCK_HM_BASE_ANSWERS[q.id] ?? '',
+      }));
       const personalizedQs = (MOCK_HM_QUESTIONS[candidateId] ?? []).map((q) => ({
         ...q,
         id: `hmp_${q.id}`,
         questionType: 'personalized' as const,
         interviewStage: 'hm' as const,
-        candidateAnswer: '',
+        candidateAnswer: hmPersonalizedAnswers[q.id] ?? '',
       }));
       setHmRealQuestions([...baseQs, ...personalizedQs]);
       return;
@@ -1029,15 +1044,14 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     resetVacancyState();
     const v = vacancies.find((vac) => vac.id === id);
     if (v) {
-      // Pre-fill team/role so the JD input step doesn't show defaults
       setTeamContext(v.team);
       setRoleType(v.title);
 
-      // Restore persisted state so the vacancy opens at the right step
       if (v.jdGenerated) {
+        // Real vacancy from Supabase with a persisted JD
         setGeneratedJD(v.jdGenerated as any);
         setGenerated(true);
-        // Advance to the furthest meaningful step based on vacancy status
+        if (v.jdBenefits) setCompanyBenefits(v.jdBenefits);
         if (v.status === 'interviewing') {
           setCurrentStep('interview');
         } else if (v.status === 'screening' || v.applicants > 0) {
@@ -1045,12 +1059,28 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
         } else {
           setCurrentStep('generated');
         }
+      } else if (mockMode && v.status !== 'draft') {
+        // Mock vacancy: inject the mock JD and advance to the correct step
+        setGeneratedJD({
+          summary: MOCK_GENERATED_JD.summary,
+          requiredSkills: MOCK_GENERATED_JD.skills,
+          responsibilities: MOCK_GENERATED_JD.responsibilities,
+          benefits: MOCK_GENERATED_JD.benefits,
+        });
+        setGenerated(true);
+        setJdFiles(MOCK_FILES);
+        setCompanyBenefits(MOCK_BENEFITS);
+        setHmSubmitted(true);
+        if (v.status === 'interviewing') {
+          setCurrentStep('interview');
+        } else if (v.status === 'screening') {
+          setCurrentStep('screening');
+        } else {
+          setCurrentStep('generated');
+        }
       }
 
-      // Restore persisted benefits / raw text if available
-      if (v.jdBenefits) setCompanyBenefits(v.jdBenefits);
-
-      // In mock mode, restore candidates for vacancies that have them
+      // Restore candidates for mock vacancies that have applicants
       if (mockMode && (v.status === 'interviewing' || v.status === 'screening')) {
         setCvCandidates(MOCK_CV_CANDIDATES);
       }
