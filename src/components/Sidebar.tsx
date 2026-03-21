@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeScreen, onScreenChange, 
       {/* Logo */}
       <div className="px-5 mb-8">
         <img
-          src="/micoach-logo.png?v=2"
+          src={`${import.meta.env.BASE_URL}micoach-logo.png?v=2`}
           alt="miCoach"
           className="h-10 w-auto object-contain"
           style={{ background: 'transparent' }}
