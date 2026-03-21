@@ -639,6 +639,63 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
     }
   };
 
+  // Demo mode for HM role — activates from the vacancy list or detail
+  const toggleHmListMockMode = () => {
+    const next = !mockMode;
+    setMockMode(next);
+    if (next) {
+      setVacancies(MOCK_VACANCIES);
+    } else {
+      setVacancies([]);
+      fetchVacancies().then(setVacancies).catch(() => {});
+    }
+  };
+
+  const toggleHmDetailMockMode = () => {
+    const next = !mockMode;
+    setMockMode(next);
+    if (next) {
+      // Point HM demo to v4 (DevOps / SRE Engineer, status: interviewing)
+      setVacancies(MOCK_VACANCIES);
+      setSelectedVacancy('v4');
+      setGeneratedJD({
+        summary: 'Buscamos un DevOps / SRE Engineer para liderar la confiabilidad de nuestra infraestructura en GCP. El candidato ideal dominará Kubernetes, Terraform, y tendrá experiencia en incident response y SLOs.',
+        requiredSkills: ['Kubernetes', 'Terraform', 'GCP', 'Prometheus / Grafana', 'Incident Response', 'Python / Go'],
+        responsibilities: [
+          'Gestionar y evolucionar la infraestructura GKE en producción.',
+          'Definir y monitorear SLOs para los servicios críticos.',
+          'Liderar incident response y post-mortems.',
+          'Colaborar con Backend en optimización de costos de infra.',
+        ],
+        benefits: MOCK_GENERATED_JD.benefits,
+      });
+      setGenerated(true);
+      setCurrentStep('interview');
+      // Load approved mock candidates (the ones the HM should interview)
+      setCvCandidates(MOCK_CV_CANDIDATES.filter((c) => c.status === 'approved'));
+      // Pre-select first approved candidate and load their HM questions
+      const firstApproved = MOCK_CV_CANDIDATES.find((c) => c.status === 'approved');
+      if (firstApproved) {
+        setSelectedHmCandidateId(firstApproved.id);
+        const hmPersonalizedAnswers = MOCK_HM_ANSWERS[firstApproved.id] ?? {};
+        const baseQs = MOCK_HM_BASE_QUESTIONS.map((q) => ({
+          ...q,
+          candidateAnswer: MOCK_HM_BASE_ANSWERS[q.id] ?? '',
+        }));
+        const personalizedQs = (MOCK_HM_QUESTIONS[firstApproved.id] ?? []).map((q) => ({
+          ...q,
+          id: `hmp_${q.id}`,
+          questionType: 'personalized' as const,
+          interviewStage: 'hm' as const,
+          candidateAnswer: hmPersonalizedAnswers[q.id] ?? '',
+        }));
+        setHmRealQuestions([...baseQs, ...personalizedQs]);
+      }
+    } else {
+      resetVacancyState();
+    }
+  };
+
   const toggleHmMockMode = () => {
     const next = !hmMockMode;
     setHmMockMode(next);
@@ -1287,6 +1344,18 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                   </button>
                 </>
               )}
+              {activeRole === 'hiring_manager' && (
+                <button
+                  onClick={toggleHmListMockMode}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                    mockMode
+                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                      : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high border border-amber-400/30 hover:border-amber-400'
+                  }`}
+                >
+                  <FlaskConical size={14} />Demo {mockMode ? 'ON' : 'OFF'}
+                </button>
+              )}
               <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
                 <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
                 <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
@@ -1441,6 +1510,11 @@ export const Vacancies: React.FC<VacanciesProps> = ({ activeRole }) => {
                   </button>
                 )}
               </>
+            )}
+            {activeRole === 'hiring_manager' && (
+              <button onClick={toggleHmDetailMockMode} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${mockMode ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}>
+                <FlaskConical size={14} />Demo {mockMode ? 'ON' : 'OFF'}
+              </button>
             )}
             <div className="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg">
               <div className={`w-2 h-2 rounded-full ${activeRole === 'hr' ? 'bg-secondary' : 'bg-primary-container'}`} />
